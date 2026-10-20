@@ -13,6 +13,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ==================== CACHE SETUP (API खर्च कम करने के लिए) ====================
+// यह इन-मेमोरी कैश है। जब सर्वर रीस्टार्ट होगा, यह खाली हो जाएगा।
+// 24 घंटे (86400000 ms) तक डेटा सेव रहेगा।
+const searchCache = new Map();
+const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 Hours
+
 // ==================== AFFILIATE LINK CONFIG ====================
 // यहां सभी platforms के base URLs + affiliate params centralized हैं
 const AFFILIATE_CONFIG = {
@@ -251,8 +257,23 @@ app.post('/api/search', async (req, res) => {
     if (!query || !query.trim()) {
       return res.status(400).json({ success: false, error: 'Search query required' });
     }
-    const cleanQuery = query.trim();
+    const cleanQuery = query.trim().toLowerCase(); // lowercase for better cache matching
 
+    // ==================== 1. CHECK CACHE FIRST ====================
+    const cachedData = searchCache.get(cleanQuery);
+    if (cachedData) {
+      // अगर कैश में डेटा है और वह एक्सपायर नहीं हुआ है
+      if (Date.now() - cachedData.timestamp < CACHE_EXPIRY_MS) {
+        console.log(`✅ Cache Hit for: "${cleanQuery}" (बचत हुई API कॉल)`);
+        return res.json({ success: true, products: cachedData.products, fromCache: true });
+      } else {
+        // एक्सपायर हो चुका है, तो डिलीट कर दें
+        searchCache.delete(cleanQuery);
+      }
+    }
+
+    console.log(`⏳ Cache Miss for: "${cleanQuery}" (AI कॉल हो रही है...)`);
+    
     let products = null;
 
     if (ai) {
@@ -306,6 +327,12 @@ app.post('/api/search', async (req, res) => {
       };
     });
 
+    // ==================== 2. SAVE TO CACHE ====================
+    searchCache.set(cleanQuery, {
+      products: finalProducts,
+      timestamp: Date.now()
+    });
+
     return res.json({ success: true, products: finalProducts });
   } catch (err) {
     console.error('Search endpoint error:', err);
@@ -315,7 +342,7 @@ app.post('/api/search', async (req, res) => {
 
 // ==================== HEALTH CHECK ====================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', ai: !!ai, timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', ai: !!ai, cachedItems: searchCache.size, timestamp: new Date().toISOString() });
 });
 
 // ==================== CATCH-ALL → index.html ====================
@@ -326,5 +353,6 @@ app.get('*', (req, res) => {
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`\n🛒 Shopping Deals Server running at http://localhost:${PORT}`);
-  console.log(`🤖 Gemini AI: ${ai ? '✅ Active' : '⚠️  Fallback mode (no API key)'}\n`);
+  console.log(`🤖 Gemini AI: ${ai ? '✅ Active' : '⚠️  Fallback mode (no API key)'}`);
+  console.log(`⚡ Caching: ✅ Active (24 Hours)\n`);
 });
