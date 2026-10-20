@@ -15,52 +15,52 @@
     color:#fff; padding:65px 15px; text-align:center;
     position: relative;
   }
- /* 💎 3D गोल्डन (Golden) टेक्स्ट इफेक्ट */
+ /* 🚀 असली 3D ब्लॉक इफेक्ट (Real 3D Text) */
 header h1 { 
-  font-size: 2.6rem; 
-  margin-bottom: 10px; 
+  font-size: 3rem; 
+  margin-bottom: 15px; 
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
+  color: #ff3b3b; /* मुख्य लाल रंग */
   
-  /* सुनहरा (Golden) ग्रेडिएंट रंग */
-  background: linear-gradient(to bottom, #FCEABB 0%, #F8B500 50%, #b37400 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  
-  /* असली 3D शैडो (जो अक्षरों को उभारता है) + गोल्डन ग्लो */
+  /* यहाँ हमने 10 लेयर की 3D शैडो दी है ताकि अक्षर उभर कर सामने आएं */
   text-shadow: 
-    0px 1px 0px #d4a017,
-    0px 2px 0px #b8860b,
-    0px 3px 0px #9e7a00,
-    0px 4px 0px #856300,
-    0px 5px 0px #6b4d00,
-    0px 6px 3px rgba(0, 0, 0, 0.8),
-    0px 10px 15px rgba(0, 0, 0, 0.6);
+    0px 1px 0px #cc0000,
+    0px 2px 0px #b30000,
+    0px 3px 0px #990000,
+    0px 4px 0px #800000,
+    0px 5px 0px #660000,
+    0px 6px 0px #4d0000,
+    0px 7px 0px #330000,
+    0px 8px 0px #1a0000,
+    0px 9px 10px rgba(0, 0, 0, 0.8), /* नीचे का डार्क शैडो */
+    0px 15px 20px rgba(0, 0, 0, 0.5); /* और भी नीचे का धुंधला शैडो */
     
   transition: transform 0.3s ease;
 }
 
 /* माउस ले जाने पर थोड़ा ज़ूम */
 header h1:hover { 
-  transform: scale(1.05); 
+  transform: scale(1.05) translateY(-5px); 
 }
 
-/* मोबाइल के लिए (साइज़ छोटा करने के लिए) */
+/* मोबाइल के लिए (साइज़ छोटा और 3D शैडो थोड़ी कम) */
 @media (max-width:600px) {
   header h1 { 
-    font-size: 1.8rem; 
+    font-size: 2rem; 
     letter-spacing: 1px;
-    /* मोबाइल पर शैडो थोड़ा कम किया ताकि साफ दिखे */
     text-shadow: 
-      0px 1px 0px #d4a017,
-      0px 2px 0px #b8860b,
-      0px 3px 0px #9e7a00,
-      0px 4px 3px rgba(0, 0, 0, 0.8),
-      0px 8px 10px rgba(0, 0, 0, 0.6);
+      0px 1px 0px #cc0000,
+      0px 2px 0px #990000,
+      0px 3px 0px #660000,
+      0px 4px 0px #330000,
+      0px 5px 5px rgba(0, 0, 0, 0.8),
+      0px 8px 10px rgba(0, 0, 0, 0.5);
   }
 }
+ 
+
  
     
 
