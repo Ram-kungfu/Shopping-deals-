@@ -17,16 +17,14 @@ const searchCache = new Map();
 const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
 // ==================== STORE LINK CONFIG ====================
-// type 'q'     : base + खोज शब्द
-// type 'path'  : खोज शब्द URL के रास्ते में जाता है (Myntra, JioMart)
-// type 'site'  : Google में "खोज site:साइट" खुलेगा (जब सीधा पेज न चले)
-// type 'google': साइट बंद/अस्थिर है, Google खोज खुलेगी
-// env   : उस स्टोर की अपनी affiliate ID का नाम (Render Environment में)
-// param : उस ID का पैरामीटर नाम
-// cue   : false हो तो Cuelinks से नहीं गुज़रेगा (जैसे Amazon)
+// type 'q'    : base + खोज शब्द + (अगर ID है तो) affiliate पैरामीटर
+// type 'path' : खोज शब्द URL के रास्ते में जाता है (Myntra, JioMart)
+// type 'google': साइट बंद/अस्थिर है, इसलिए Google खोज खुलेगी
+// env  : Render Environment में जो ID डालेंगे उसका नाम
+// param: affiliate पैरामीटर का नाम (अपने affiliate प्रोग्राम के हिसाब से बदलें)
 const STORES = {
   // ---------- RETAIL ----------
-  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', cue: false },
+  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
   flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
   meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source' },
   myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source' },
@@ -43,14 +41,14 @@ const STORES = {
 
   // ---------- WHOLESALE / B2B ----------
   indiamart:         { type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source' },
-  udaan:             { type: 'site', site: 'udaan.com' },
+  udaan:             { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source' },
   tradeindia:        { type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source' },
   flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
   jumbotail:         { type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source' },
   ninjacart:         { type: 'q', base: 'https://ninjacart.in/search?q=', env: 'NINJACART_AFF_ID', param: 'utm_source' },
 
   // ---------- COMMERCIAL / INDUSTRIAL ----------
-  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', cue: false },
+  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
   moglix:         { type: 'q', base: 'https://www.moglix.com/search?q=', env: 'MOGLIX_AFF_ID', param: 'utm_source' },
   industrybuying: { type: 'q', base: 'https://www.industrybuying.com/search/?q=', env: 'INDUSTRYBUYING_AFF_ID', param: 'utm_source' },
 
@@ -68,52 +66,30 @@ function googleLink(query, label) {
   return `https://www.google.com/search?q=${encodeURIComponent((query + ' ' + (label || '') + ' buy online').trim())}`;
 }
 
-function realValue(v) {
-  return v && !/^YOUR_/i.test(v) ? v : '';
-}
-
-// स्टोर की अपनी affiliate ID (सिर्फ तब जुड़ेगी जब Render में असली ID डाली हो)
+// affiliate ID सिर्फ तब जुड़ेगी जब Render में असली ID डाली हो
 function withAffiliate(url, store) {
-  const id = realValue(store.env ? process.env[store.env] : '');
-  if (!id) return url;
+  const id = store.env ? process.env[store.env] : '';
+  if (!id || /^YOUR_/i.test(id)) return url;
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}${store.param}=${encodeURIComponent(id)}`;
-}
-
-// Cuelinks: Render में CUELINKS_CID डालने पर लिंक Cuelinks से गुज़रेगा
-// अगर Cuelinks का फॉर्मेट अलग निकले तो सिर्फ नीचे वाली return लाइन बदलनी होगी
-function cuelinksWrap(url) {
-  const cid = realValue(process.env.CUELINKS_CID);
-  if (!cid) return url;
-  return `https://linksredirect.com/?cid=${encodeURIComponent(cid)}&source=linkkit&url=${encodeURIComponent(url)}`;
 }
 
 function buildAffiliateLink(storeKey, query, storeName) {
   const key = String(storeKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const store = STORES[key];
-  const q = String(query || '').trim();
-
-  if (!store) return googleLink(q, storeName);
-  if (store.type === 'google') return googleLink(q, store.label);
-  if (store.type === 'site') {
-    return `https://www.google.com/search?q=${encodeURIComponent(q + ' site:' + store.site)}`;
-  }
+  if (!store) return googleLink(query, storeName);
+  if (store.type === 'google') return googleLink(query, store.label);
 
   let url;
   if (store.type === 'path') {
     const slug = store.hyphen
-      ? encodeURIComponent(q.replace(/\s+/g, '-'))
-      : encodeURIComponent(q);
+      ? encodeURIComponent(query.trim().replace(/\s+/g, '-'))
+      : encodeURIComponent(query.trim());
     url = store.base + slug;
   } else {
-    url = store.base + encodeURIComponent(q);
+    url = store.base + encodeURIComponent(query.trim());
   }
-
-  // 1) स्टोर की अपनी ID हो तो वही  2) नहीं तो Cuelinks  3) दोनों नहीं तो सादा लिंक
-  const ownId = realValue(store.env ? process.env[store.env] : '');
-  if (ownId) return withAffiliate(url, store);
-  if (store.cue !== false) return cuelinksWrap(url);
-  return url;
+  return withAffiliate(url, store);
 }
 
 function placeholderImage(text) {
@@ -276,8 +252,7 @@ app.post('/api/search', async (req, res) => {
               name: String(store.name),
               price: String(store.price || '—'),
               isLowest: !!store.isLowest,
-              link: buildAffiliateLink(keyFromAI, cleanQuery, store.name),
-              altLink: googleLink(cleanQuery, store.name)
+              link: buildAffiliateLink(keyFromAI, cleanQuery, store.name)
             };
           });
 
@@ -321,14 +296,7 @@ app.post('/api/search', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    ai: !!ai,
-    model: GEMINI_MODEL,
-    cuelinks: !!realValue(process.env.CUELINKS_CID),
-    cachedItems: searchCache.size,
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'ok', ai: !!ai, model: GEMINI_MODEL, cachedItems: searchCache.size, timestamp: new Date().toISOString() });
 });
 
 app.get('*', (req, res) => {
@@ -338,5 +306,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🛒 Shopping Deals Server running on port ${PORT}`);
   console.log(`🤖 Gemini AI: ${ai ? '✅ Active (' + GEMINI_MODEL + ')' : '⚠️  Fallback mode'}`);
-  console.log(`🔗 Cuelinks: ${realValue(process.env.CUELINKS_CID) ? '✅ Active' : '⚠️  CUELINKS_CID not set'}`);
 });
