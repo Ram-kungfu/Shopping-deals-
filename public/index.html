@@ -15,26 +15,54 @@
     color:#fff; padding:65px 15px; text-align:center;
     position: relative;
   }
-    header h1 {
-    font-size: 2.8rem;
-    font-weight: 900;
+ /* 💎 3D गोल्डन (Golden) टेक्स्ट इफेक्ट */
+header h1 { 
+  font-size: 2.6rem; 
+  margin-bottom: 10px; 
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  
+  /* सुनहरा (Golden) ग्रेडिएंट रंग */
+  background: linear-gradient(to bottom, #FCEABB 0%, #F8B500 50%, #b37400 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  
+  /* असली 3D शैडो (जो अक्षरों को उभारता है) + गोल्डन ग्लो */
+  text-shadow: 
+    0px 1px 0px #d4a017,
+    0px 2px 0px #b8860b,
+    0px 3px 0px #9e7a00,
+    0px 4px 0px #856300,
+    0px 5px 0px #6b4d00,
+    0px 6px 3px rgba(0, 0, 0, 0.8),
+    0px 10px 15px rgba(0, 0, 0, 0.6);
+    
+  transition: transform 0.3s ease;
+}
+
+/* माउस ले जाने पर थोड़ा ज़ूम */
+header h1:hover { 
+  transform: scale(1.05); 
+}
+
+/* मोबाइल के लिए (साइज़ छोटा करने के लिए) */
+@media (max-width:600px) {
+  header h1 { 
+    font-size: 1.8rem; 
     letter-spacing: 1px;
-    text-transform: uppercase;
-    
-    /* मल्टी-कलर ग्रेडिएंट (लाल, नारंगी, पीला और चमकदार शेड्स) */
-    background: linear-gradient(135deg, #ff0844, #ffb199, #f7ff00, #ff2a68);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* 3D उभरा हुआ और गहरा शैडो इफ़ेक्ट */
+    /* मोबाइल पर शैडो थोड़ा कम किया ताकि साफ दिखे */
     text-shadow: 
-      2px 2px 0px #990000, 
-      4px 4px 0px #660000, 
-      6px 6px 20px rgba(0, 0, 0, 0.8);
-      
-    filter: drop-shadow(0 4px 10px rgba(255, 8, 68, 0.5));
-    margin-bottom: 10px;
+      0px 1px 0px #d4a017,
+      0px 2px 0px #b8860b,
+      0px 3px 0px #9e7a00,
+      0px 4px 3px rgba(0, 0, 0, 0.8),
+      0px 8px 10px rgba(0, 0, 0, 0.6);
   }
+}
+ 
+    
 
   header p { font-size:1.1rem; color:#f8fafc; max-width:750px; margin:0 auto; line-height:1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
