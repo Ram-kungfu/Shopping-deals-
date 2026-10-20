@@ -9,9 +9,8 @@
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   body { background:#f1f5f9; color:#1e293b; min-height:100vh; display:flex; flex-direction:column; }
 
-  /* HEADER (बैनर अब एकदम चमकदार दिखेगा) */
+  /* HEADER */
   header {
-    /* काला शेड हटाकर हल्का नीला शेड डाला है ताकि बैनर साफ दिखे */
     background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('hero-banner.jpg') center/cover no-repeat;
     background-color: #1e3a8a; 
     color:#fff; padding:65px 15px; text-align:center;
@@ -26,14 +25,16 @@
     display:flex; background:#fff; padding:10px; border-radius:60px;
     box-shadow:0 15px 35px rgba(15,23,42,0.18);
   }
-  /* सर्च इनपुट बॉक्स का कलर हल्का हरा (Green) किया गया है */
-  .search-box input {
-    flex:1; border:2px solid #bbf7d0; outline:none; padding:14px 22px;
-    font-size:1.05rem; border-radius:60px; background:#f0fdf4;
-    color: #065f46; font-weight: 500;
-  }
-  .search-box input::placeholder { color: #059669; opacity: 0.8; }
   
+  /* 🔴 यहाँ सर्चिंग वाले बॉक्स का रंग हल्का गुलाबी (Light Pink) किया गया है 🔴 */
+  .search-box input {
+    flex:1; border:2px solid #fbcfe8; outline:none; padding:14px 22px;
+    font-size:1.05rem; border-radius:60px; background:#fdf2f8;
+    color: #831843; font-weight: 500;
+  }
+  .search-box input::placeholder { color: #db2777; opacity: 0.7; }
+  
+  /* AI सर्च बटन का रंग नीला (Blue) ही रखा गया है */
   .search-box button {
     background:#2563eb; color:#fff; border:none; padding:14px 28px;
     font-size:1rem; border-radius:60px; cursor:pointer; font-weight:600;
@@ -88,12 +89,12 @@
     display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:24px;
   }
 
-  /* EMPTY STATE (स्वागत संदेश का डिज़ाइन बदला गया है) */
+  /* EMPTY STATE (स्वागत संदेश का डिज़ाइन) */
   .empty-msg {
     text-align:center; grid-column:1/-1; padding:50px 20px;
     color:#475569; font-size:1.05rem; 
-    background: #fffbeb; /* हल्का सुनहरा बैकग्राउंड */
-    border: 2px dashed #fcd34d; /* सुनहरा बॉर्डर */
+    background: #fffbeb; 
+    border: 2px dashed #fcd34d; 
     border-radius: 14px;
     line-height: 1.6;
   }
@@ -151,7 +152,7 @@
   }
   @keyframes spin { to { transform:rotate(360deg); } }
 
-  /* FOOTER (फुटर का रंग गहरा नीला किया गया है) */
+  /* FOOTER */
   footer {
     background:#1e3a8a; color:#e2e8f0; text-align:center;
     padding:26px 15px; font-size:0.9rem; margin-top:auto;
@@ -186,7 +187,6 @@
 <!-- ==================== SEARCH ==================== -->
 <div class="search-section">
   <div class="search-box">
-    <!-- यहाँ सर्च बॉक्स का रंग हल्का हरा कर दिया गया है -->
     <input type="text" id="searchInput" placeholder="कोई भी सामान सर्च करें (जैसे: Laptop, Kurti, Mobile...)" onkeydown="if(event.key==='Enter') performAISearch()">
     <button onclick="performAISearch()">🔍 AI सर्च</button>
   </div>
@@ -209,7 +209,6 @@
   <h2 class="section-title">लाइव मूल्य तुलना और बेस्ट डील्स के साथ खरीदें (Live Price Comparison)</h2>
 
   <div class="grid" id="productGrid">
-    <!-- यहाँ वेलकम मैसेज का डिज़ाइन और कलर बदला गया है -->
     <div class="empty-msg">
       👋 <strong>Shopping Deals</strong> में आपका स्वागत है!<br><br>
       ऊपर सर्च बार में कोई भी सामान (जैसे- मोबाइल, कपड़े, औजार) लिखकर <strong>AI सर्च</strong> दबाएं।<br>
@@ -378,4 +377,4 @@
 </script>
 
 </body>
-</html>
+ </html>
