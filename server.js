@@ -8,67 +8,90 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-// ==================== MIDDLEWARE ====================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== CACHE ====================
 const searchCache = new Map();
-const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 Hours
+const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
-// ==================== AFFILIATE LINK CONFIG ====================
-const AFFILIATE_CONFIG = {
+// ==================== STORE LINK CONFIG ====================
+// type 'q'    : base + खोज शब्द + (अगर ID है तो) affiliate पैरामीटर
+// type 'path' : खोज शब्द URL के रास्ते में जाता है (Myntra, JioMart)
+// type 'google': साइट बंद/अस्थिर है, इसलिए Google खोज खुलेगी
+// env  : Render Environment में जो ID डालेंगे उसका नाम
+// param: affiliate पैरामीटर का नाम (अपने affiliate प्रोग्राम के हिसाब से बदलें)
+const STORES = {
   // ---------- RETAIL ----------
-  amazon: { base: 'https://www.amazon.in/s?k=', param: '&tag=' + (process.env.AMAZON_AFF_ID || 'YOUR_AMAZON_ID') },
-  flipkart: { base: 'https://www.flipkart.com/search?q=', param: '&affid=' + (process.env.FLIPKART_AFF_ID || 'YOUR_FLIPKART_ID') },
-  meesho: { base: 'https://www.meesho.com/search?q=', param: '&utm_source=' + (process.env.MEESHO_AFF_ID || 'YOUR_MEESHO_ID') },
-  myntra: { base: 'https://www.myntra.com/', param: '?utm_source=' + (process.env.MYNTRA_AFF_ID || 'YOUR_MYNTRA_ID') },
-  ajio: { base: 'https://www.ajio.com/search/?text=', param: '&utm_source=' + (process.env.AJIO_AFF_ID || 'YOUR_AJIO_ID') },
-  tatacliq: { base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', param: '&utm_source=' + (process.env.TATACLIQ_AFF_ID || 'YOUR_TATACLIQ_ID') },
-  jiomart: { base: 'https://www.jiomart.com/search/', param: '?utm_source=' + (process.env.JIOMART_AFF_ID || 'YOUR_JIOMART_ID') },
-  shopclues: { base: 'https://www.shopclues.com/search?q=', param: '&utm_source=' + (process.env.SHOPCLUES_AFF_ID || 'YOUR_SHOPCLUES_ID') },
+  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
+  flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
+  meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source' },
+  myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source' },
+  ajio:     { type: 'q', base: 'https://www.ajio.com/search/?text=', env: 'AJIO_AFF_ID', param: 'utm_source' },
+  tatacliq: { type: 'q', base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', env: 'TATACLIQ_AFF_ID', param: 'utm_source' },
+  jiomart:  { type: 'path', base: 'https://www.jiomart.com/search/', env: 'JIOMART_AFF_ID', param: 'utm_source' },
+  shopclues:{ type: 'google', label: 'ShopClues' },
 
   // ---------- QUICK COMMERCE & GROCERY ----------
-  blinkit: { base: 'https://blinkit.com/s/?q=', param: '&utm_source=' + (process.env.BLINKIT_AFF_ID || 'YOUR_BLINKIT_ID') },
-  zepto: { base: 'https://www.zeptonow.com/search?query=', param: '&utm_source=' + (process.env.ZEPTO_AFF_ID || 'YOUR_ZEPTO_ID') },
-  instamart: { base: 'https://www.swiggy.com/instamart/search?custom_back=true&query=', param: '&utm_source=' + (process.env.INSTAMART_AFF_ID || 'YOUR_INSTAMART_ID') },
-  bigbasket: { base: 'https://www.bigbasket.com/ps/?q=', param: '&utm_source=' + (process.env.BIGBASKET_AFF_ID || 'YOUR_BIGBASKET_ID') },
+  blinkit:   { type: 'q', base: 'https://blinkit.com/s/?q=', env: 'BLINKIT_AFF_ID', param: 'utm_source' },
+  zepto:     { type: 'q', base: 'https://www.zeptonow.com/search?query=', env: 'ZEPTO_AFF_ID', param: 'utm_source' },
+  instamart: { type: 'q', base: 'https://www.swiggy.com/instamart/search?custom_back=true&query=', env: 'INSTAMART_AFF_ID', param: 'utm_source' },
+  bigbasket: { type: 'q', base: 'https://www.bigbasket.com/ps/?q=', env: 'BIGBASKET_AFF_ID', param: 'utm_source' },
 
   // ---------- WHOLESALE / B2B ----------
-  indiamart: { base: 'https://dir.indiamart.com/search.mp?ss=', param: '&utm_source=' + (process.env.INDIAMART_AFF_ID || 'YOUR_INDIAMART_ID') },
-  udaan: { base: 'https://www.udaan.com/search?q=', param: '&utm_source=' + (process.env.UDAAN_AFF_ID || 'YOUR_UDAAN_ID') },
-  tradeindia: { base: 'https://www.tradeindia.com/search.html?keyword=', param: '&utm_source=' + (process.env.TRADEINDIA_AFF_ID || 'YOUR_TRADEINDIA_ID') },
-  flipkartwholesale: { base: 'https://www.flipkart.com/search?q=', param: '&affid=' + (process.env.FLIPKART_AFF_ID || 'YOUR_FLIPKART_ID') + '&wholesale=true' },
-  jumbotail: { base: 'https://jumbotail.com/search?q=', param: '&utm_source=' + (process.env.JUMBOTAIL_AFF_ID || 'YOUR_JUMBOTAIL_ID') },
-  ninjacart: { base: 'https://ninjacart.in/search?q=', param: '&utm_source=' + (process.env.NINJACART_AFF_ID || 'YOUR_NINJACART_ID') },
+  indiamart:         { type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source' },
+  udaan:             { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source' },
+  tradeindia:        { type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source' },
+  flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
+  jumbotail:         { type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source' },
+  ninjacart:         { type: 'q', base: 'https://ninjacart.in/search?q=', env: 'NINJACART_AFF_ID', param: 'utm_source' },
 
   // ---------- COMMERCIAL / INDUSTRIAL ----------
-  amazonbusiness: { base: 'https://www.amazon.in/s?k=', param: '&tag=' + (process.env.AMAZON_AFF_ID || 'YOUR_AMAZON_ID') + '&i=b2b' },
-  moglix: { base: 'https://www.moglix.com/search?q=', param: '&utm_source=' + (process.env.MOGLIX_AFF_ID || 'YOUR_MOGLIX_ID') },
-  industrybuying: { base: 'https://www.industrybuying.com/search/?q=', param: '&utm_source=' + (process.env.INDUSTRYBUYING_AFF_ID || 'YOUR_IB_ID') },
+  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
+  moglix:         { type: 'q', base: 'https://www.moglix.com/search?q=', env: 'MOGLIX_AFF_ID', param: 'utm_source' },
+  industrybuying: { type: 'q', base: 'https://www.industrybuying.com/search/?q=', env: 'INDUSTRYBUYING_AFF_ID', param: 'utm_source' },
 
-  // ---------- GLOBAL / IMPORT ----------
-  alibaba: { base: 'https://www.alibaba.com/trade/search?SearchText=', param: '&aff_id=' + (process.env.ALIBABA_AFF_ID || 'YOUR_ALIBABA_ID') },
+  // ---------- GLOBAL ----------
+  alibaba: { type: 'q', base: 'https://www.alibaba.com/trade/search?SearchText=', env: 'ALIBABA_AFF_ID', param: 'aff_id' },
 
   // ---------- RESELLING ----------
-  glowroad: { base: 'https://www.glowroad.com/search?q=', param: '&affid=' + (process.env.GLOWROAD_AFF_ID || 'YOUR_GLOWROAD_ID') },
-  shop101: { base: 'https://www.shop101.com/search?q=', param: '&affid=' + (process.env.SHOP101_AFF_ID || 'YOUR_SHOP101_ID') },
-  navo: { base: 'https://navo.app/search?q=', param: '&affid=' + (process.env.NAVO_AFF_ID || 'YOUR_NAVO_ID') }
+  glowroad: { type: 'google', label: 'GlowRoad' },
+  shop101:  { type: 'google', label: 'Shop101' },
+  navo:     { type: 'q', base: 'https://navo.app/search?q=', env: 'NAVO_AFF_ID', param: 'utm_source' }
 };
 
 // ==================== HELPERS ====================
-function buildAffiliateLink(storeKey, query) {
-  const key = String(storeKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const store = AFFILIATE_CONFIG[key];
-  if (!store) {
-    return `https://www.google.com/search?q=${encodeURIComponent(query + ' buy online')}`;
-  }
-  return `${store.base}${encodeURIComponent(query)}${store.param}`;
+function googleLink(query, label) {
+  return `https://www.google.com/search?q=${encodeURIComponent((query + ' ' + (label || '') + ' buy online').trim())}`;
 }
 
-// इमेज खुद बनाएं (via.placeholder.com बंद हो चुका है)
+// affiliate ID सिर्फ तब जुड़ेगी जब Render में असली ID डाली हो
+function withAffiliate(url, store) {
+  const id = store.env ? process.env[store.env] : '';
+  if (!id || /^YOUR_/i.test(id)) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${store.param}=${encodeURIComponent(id)}`;
+}
+
+function buildAffiliateLink(storeKey, query, storeName) {
+  const key = String(storeKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const store = STORES[key];
+  if (!store) return googleLink(query, storeName);
+  if (store.type === 'google') return googleLink(query, store.label);
+
+  let url;
+  if (store.type === 'path') {
+    const slug = store.hyphen
+      ? encodeURIComponent(query.trim().replace(/\s+/g, '-'))
+      : encodeURIComponent(query.trim());
+    url = store.base + slug;
+  } else {
+    url = store.base + encodeURIComponent(query.trim());
+  }
+  return withAffiliate(url, store);
+}
+
 function placeholderImage(text) {
   const label = String(text || 'Product').slice(0, 24).replace(/[<>&"']/g, '');
   const svg =
@@ -84,7 +107,7 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// ==================== GEMINI AI INIT ====================
+// ==================== GEMINI ====================
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 let ai = null;
 if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
@@ -94,10 +117,9 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
     console.error('Gemini init failed:', e.message);
   }
 } else {
-  console.warn('⚠️  GEMINI_API_KEY not set — AI search will use fallback static results.');
+  console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
 }
 
-// ==================== PROMPT BUILDER ====================
 function buildPrompt(query) {
   return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
 
@@ -105,7 +127,7 @@ The user is searching for: "${query}".
 
 Provide 3-5 matching products with realistic price comparisons across these platforms based on the item category:
 
-RETAIL & FASHION: Amazon, Flipkart, JioMart, ShopClues, Meesho, Myntra, Ajio, TataCLiQ
+RETAIL & FASHION: Amazon, Flipkart, JioMart, Meesho, Myntra, Ajio, TataCLiQ
 QUICK COMMERCE & GROCERY: Blinkit, Zepto, Instamart, BigBasket
 WHOLESALE / B2B: IndiaMART, Udaan, TradeIndia, Flipkart Wholesale, Jumbotail, NinjaCart
 COMMERCIAL / INDUSTRIAL: Amazon Business, Moglix, IndustryBuying
@@ -129,7 +151,7 @@ STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fenc
 ]
 
 IMPORTANT RULES:
-1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, shopclues, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
+1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
 2. "stores" array length MUST exactly match "storeKeys" array length, in the same order.
 3. Exactly ONE store must have "isLowest": true per product.
 4. Prices must be realistic Indian Rupee values (₹) with comma formatting.
@@ -137,14 +159,10 @@ IMPORTANT RULES:
 6. Leave "image" as an empty string. Do NOT include the "link" field — links are generated by the server.`;
 }
 
-// ==================== FALLBACK STATIC DATA ====================
 function getFallbackResults(query) {
   return [
     {
-      category: 'retail',
-      title: `${query} — Retail Pick`,
-      image: '',
-      badgeText: 'Retail / Consumer',
+      category: 'retail', title: `${query} — Retail Pick`, image: '', badgeText: 'Retail / Consumer',
       storeKeys: ['amazon', 'flipkart'],
       stores: [
         { name: 'Amazon', price: '₹1,499', isLowest: false },
@@ -152,10 +170,7 @@ function getFallbackResults(query) {
       ]
     },
     {
-      category: 'wholesale',
-      title: `${query} — Wholesale Pack`,
-      image: '',
-      badgeText: 'Wholesale / B2B',
+      category: 'wholesale', title: `${query} — Wholesale Pack`, image: '', badgeText: 'Wholesale / B2B',
       storeKeys: ['indiamart', 'udaan'],
       stores: [
         { name: 'IndiaMART', price: '₹850 / pc', isLowest: true },
@@ -163,21 +178,16 @@ function getFallbackResults(query) {
       ]
     },
     {
-      category: 'reselling',
-      title: `${query} — Reseller Deal`,
-      image: '',
-      badgeText: 'Reselling & Social',
-      storeKeys: ['glowroad', 'shop101', 'navo'],
+      category: 'reselling', title: `${query} — Reseller Deal`, image: '', badgeText: 'Reselling & Social',
+      storeKeys: ['meesho', 'navo'],
       stores: [
-        { name: 'GlowRoad', price: '₹349', isLowest: true },
-        { name: 'Shop101', price: '₹399', isLowest: false },
+        { name: 'Meesho', price: '₹349', isLowest: true },
         { name: 'Navo', price: '₹375', isLowest: false }
       ]
     }
   ];
 }
 
-// ==================== SAFE JSON PARSE ====================
 function safeParseAIResponse(text) {
   if (!text) return null;
   let cleaned = String(text).trim();
@@ -202,17 +212,13 @@ app.post('/api/search', async (req, res) => {
     }
     const cleanQuery = String(query).trim().toLowerCase().slice(0, 100);
 
-    // 1. CACHE
     const cachedData = searchCache.get(cleanQuery);
     if (cachedData) {
       if (Date.now() - cachedData.timestamp < CACHE_EXPIRY_MS) {
-        console.log(`✅ Cache Hit: "${cleanQuery}"`);
         return res.json({ success: true, products: cachedData.products, fromCache: true });
       }
       searchCache.delete(cleanQuery);
     }
-
-    console.log(`⏳ Cache Miss: "${cleanQuery}" (AI कॉल हो रही है...)`);
 
     let products = null;
     if (ai) {
@@ -234,7 +240,6 @@ app.post('/api/search', async (req, res) => {
       usedFallback = true;
     }
 
-    // 2. AFFILIATE LINKS
     const finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
@@ -247,11 +252,10 @@ app.post('/api/search', async (req, res) => {
               name: String(store.name),
               price: String(store.price || '—'),
               isLowest: !!store.isLowest,
-              link: buildAffiliateLink(keyFromAI, cleanQuery)
+              link: buildAffiliateLink(keyFromAI, cleanQuery, store.name)
             };
           });
 
-        // सिर्फ एक "सस्ता" रखें
         if (stores.length > 0) {
           const flagged = stores.filter(s => s.isLowest).length;
           if (flagged !== 1) {
@@ -280,7 +284,6 @@ app.post('/api/search', async (req, res) => {
       })
       .filter(item => item.stores.length > 0);
 
-    // 3. CACHE में सेव (fallback डेटा सेव नहीं करते, ताकि बाद में असली AI रेट मिले)
     if (!usedFallback && finalProducts.length > 0) {
       searchCache.set(cleanQuery, { products: finalProducts, timestamp: Date.now() });
     }
@@ -292,19 +295,15 @@ app.post('/api/search', async (req, res) => {
   }
 });
 
-// ==================== HEALTH CHECK ====================
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', ai: !!ai, model: GEMINI_MODEL, cachedItems: searchCache.size, timestamp: new Date().toISOString() });
 });
 
-// ==================== CATCH-ALL → index.html ====================
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ==================== START SERVER ====================
 app.listen(PORT, () => {
-  console.log(`\n🛒 Shopping Deals Server running on port ${PORT}`);
-  console.log(`🤖 Gemini AI: ${ai ? '✅ Active (' + GEMINI_MODEL + ')' : '⚠️  Fallback mode (no API key)'}`);
-  console.log(`⚡ Caching: ✅ Active (24 Hours)\n`);
+  console.log(`🛒 Shopping Deals Server running on port ${PORT}`);
+  console.log(`🤖 Gemini AI: ${ai ? '✅ Active (' + GEMINI_MODEL + ')' : '⚠️  Fallback mode'}`);
 });
