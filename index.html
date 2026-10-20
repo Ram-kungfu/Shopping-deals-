@@ -9,32 +9,19 @@
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   body { background:#f1f5f9; color:#1e293b; min-height:100vh; display:flex; flex-direction:column; }
 
-  /* HEADER */
+  /* HEADER (यहाँ बैनर जोड़ा गया है) */
   header {
-    background: linear-gradient(135deg,#0f172a,#1e3a8a);
-    color:#fff; padding:28px 15px; text-align:center;
+    /* बैनर को बैकग्राउंड में सेट किया गया है और ऊपर एक डार्क शेड दिया गया है ताकि टेक्स्ट साफ दिखे */
+    background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(30, 58, 138, 0.85)), url('hero-banner.jpg') center/cover no-repeat;
+    background-color: #0f172a; /* अगर इमेज लोड न हो तो यह रंग दिखेगा */
+    color:#fff; padding:60px 15px; text-align:center;
+    position: relative;
   }
-  header h1 { font-size:2.2rem; margin-bottom:8px; color:#38bdf8; letter-spacing:0.5px; }
-  header p { font-size:1.02rem; color:#cbd5e1; max-width:720px; margin:0 auto; line-height:1.5; }
-
-  /* HERO BANNER (नया जोड़ा गया) */
-  .hero-banner-container {
-    max-width: 1200px;
-    margin: 20px auto 0;
-    padding: 0 15px;
-    text-align: center;
-  }
-  .hero-banner-container img {
-    width: 100%;
-    max-height: 350px;
-    object-fit: cover;
-    border-radius: 14px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-    display: block;
-  }
+  header h1 { font-size:2.5rem; margin-bottom:10px; color:#38bdf8; letter-spacing:0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+  header p { font-size:1.1rem; color:#f1f5f9; max-width:720px; margin:0 auto; line-height:1.5; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
   /* SEARCH */
-  .search-section { max-width:820px; margin: 20px auto 30px; padding:0 15px; }
+  .search-section { max-width:820px; margin:-32px auto 30px; padding:0 15px; position: relative; z-index: 10; }
   .search-box {
     display:flex; background:#fff; padding:10px; border-radius:60px;
     box-shadow:0 15px 35px rgba(15,23,42,0.18);
@@ -166,9 +153,9 @@
 
   /* MOBILE */
   @media (max-width:600px) {
-    header h1 { font-size:1.7rem; }
-    header p { font-size:0.9rem; }
-    .hero-banner-container { margin-top: 10px; }
+    header { padding: 40px 15px; }
+    header h1 { font-size:1.8rem; }
+    header p { font-size:0.95rem; }
     .search-box { flex-direction:column; border-radius:18px; padding:12px; gap:8px; }
     .search-box input { border-radius:12px; background:#f1f5f9; padding:12px 16px; }
     .search-box button { border-radius:12px; padding:12px; }
@@ -180,19 +167,13 @@
 </head>
 <body>
 
-<!-- ==================== HEADER ==================== -->
+<!-- ==================== HEADER (यहाँ बैनर बैकग्राउंड में सेट है) ==================== -->
 <header>
   <h1 id="siteNameHeader">Shopping Deals</h1>
   <p id="siteTaglineHeader">
     रीटेल (Amazon/Flipkart) से लेकर थोक (IndiaMART/Udaan) और रीसेलिंग (GlowRoad/Shop101/Navo) तक — एक ही जगह सबसे सस्ता रेट!
   </p>
 </header>
-
-<!-- ==================== HERO BANNER (नया जोड़ा गया) ==================== -->
-<div class="hero-banner-container">
-  <!-- यहाँ आपकी इमेज का नाम hero-banner.jpg है -->
-  <img src="hero-banner.jpg" alt="Shopping Deals Banner - AI Price Comparison">
-</div>
 
 <!-- ==================== SEARCH ==================== -->
 <div class="search-section">
@@ -381,9 +362,10 @@
   function resetFilterToAll() {
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     const firstBtn = document.querySelector('.filter-btn[data-cat="all"]');
+    if (firstBtn) firstBtn.firstChild.classList.add('active');
     if (firstBtn) firstBtn.classList.add('active');
   }
 </script>
 
 </body>
- </html>
+</html>
