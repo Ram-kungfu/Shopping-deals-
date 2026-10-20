@@ -25,7 +25,7 @@
     margin-bottom: 10px;
     text-align: center;
     letter-spacing: 0.5px;
-   text-transform: uppercase; 
+    text-transform: uppercase; 
 
     /* Multicolor 3D Gradient */
     background: linear-gradient(
@@ -76,21 +76,17 @@
   .search-section { max-width:820px; margin:-32px auto 30px; padding:0 15px; position: relative; z-index: 10; }
   .search-box { display:flex; background:#fff; padding:10px; border-radius:60px; box-shadow:0 15px 35px rgba(15,23,42,0.18); }
   .search-box input {
-  flex:1; 
-  border:2px solid #fbcfe8; 
-  outline:none; 
-  padding:14px 22px;
-  font-size:1.05rem; 
-  border-radius:60px; 
-  background:#fdf2f8; 
-  color: #000000; /* 🔴 यहाँ टेक्स्ट काला हो जाएगा */
-  font-weight: 700;
-}
+    flex:1; border:2px solid #fbcfe8; outline:none; padding:14px 22px;
+    font-size:1.05rem; border-radius:60px; background:#fdf2f8; 
+    color: #000000; /* 🔴 यहाँ टेक्स्ट काला हो जाएगा */
+    font-weight: 700;
+  }
 
-.search-box input::placeholder { 
-  color: #000000; /* 🔴 यहाँ 'कोई भी सामान...' वाला टेक्स्ट काला हो जाएगा */
-  opacity: 0.8; 
-}
+  .search-box input::placeholder { 
+    color: #000000; /* 🔴 यहाँ 'कोई भी सामान...' वाला टेक्स्ट काला हो जाएगा */
+    opacity: 0.8; 
+  }
+  
   .search-box button {
     background:#2563eb; color:#fff; border:none; padding:14px 28px;
     font-size:1rem; border-radius:60px; cursor:pointer; font-weight:600;
@@ -178,15 +174,13 @@
     .lang-switch { top: 10px; right: 10px; }
     .search-box { flex-direction:column; border-radius:18px; padding:12px; gap:8px; }
     .search-box input {
-  flex:1; border:2px solid #fbcfe8; outline:none; padding:14px 22px;
-  font-size:1.05rem; border-radius:60px; background:#fdf2f8; 
-  color: #000000; /* 🔴 टाइप किया हुआ टेक्स्ट काला */
-  font-weight: 700;
-}
-.search-box input::placeholder { 
-  color: #000000; /* 🔴 'कोई भी सामान सर्च करें' वाला टेक्स्ट काला */
-  opacity: 0.9; 
-}
+      border-radius:12px; padding:12px 16px; width: 100%;
+      color: #000000; /* 🔴 टाइप किया हुआ टेक्स्ट काला */
+    }
+    .search-box input::placeholder { 
+      color: #000000; /* 🔴 'कोई भी सामान सर्च करें' वाला टेक्स्ट काला */
+      opacity: 0.9; 
+    }
     .search-box button { border-radius:12px; padding:12px; width: 100%; margin-left: 0; }
     .section-title { font-size:1.25rem; }
     .card-body { padding:16px; }
@@ -346,9 +340,7 @@
     domain: "ShoppingDeals.in"
   };
 
-  // Render का बैकएंड URL। अगर आपका Render URL अलग है तो सिर्फ यही लाइन बदलें।
   const RENDER_URL = 'https://shopping-deals.onrender.com';
-  // अगर पेज सीधे Render/localhost से खुला है तो उसी सर्वर का उपयोग होगा
   const API_BASE = (location.hostname.endsWith('onrender.com') || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? ''
     : RENDER_URL;
@@ -365,7 +357,6 @@
     if (footerName) footerName.textContent = SITE_CONFIG.name;
   });
 
-  // ==================== API कॉल (टाइमआउट + एक बार रीट्राई) ====================
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -465,11 +456,19 @@
         const cheapestText = currentLang === 'hi' ? ' (सस्ता)' : ' (Lowest)';
         const priceText = store.isLowest ? `${store.price}${cheapestText}` : store.price;
 
+        // 🔴 यहाँ Google बटन जोड़ा गया है (अगर store में altLink है तो ही दिखेगा)
+        const googleBtn = store.altLink 
+          ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; padding:7px 10px; font-size:0.75rem; margin-left:5px;" title="Google पर सर्च करें">🔍 Google</a>` 
+          : '';
+
         storesHtml += `
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
-            <td><a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a></td>
+            <td style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a>
+              ${googleBtn}
+            </td>
           </tr>`;
       });
 
@@ -536,7 +535,6 @@
     }
   }
 
-  // 🔧 बग फिक्स: पहले यहां firstBtn.firstChild.classList था, जिससे error आता था
   function resetFilterToAll() {
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     const firstBtn = document.querySelector('.filter-btn[data-cat="all"]');
@@ -545,4 +543,4 @@
 </script>
 
 </body>
-</html>
+ </html>
