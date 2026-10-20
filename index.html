@@ -15,7 +15,30 @@
     color:#fff; padding:65px 15px; text-align:center;
     position: relative;
   }
-  header h1 { font-size:2.6rem; margin-bottom:10px; color:#38bdf8; letter-spacing:0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+
+  /* 🔴 3D लाल (Red) टेक्स्ट इफेक्ट (डेस्कटॉप के लिए) */
+  header h1 { 
+    font-size: 2.6rem; 
+    margin-bottom: 10px; 
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    
+    /* लाल रंग का ग्रेडिएंट */
+    background: linear-gradient(to bottom, #ff4b4b, #b30000);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    
+    /* 3D शैडो और लाल चमक (Glow) */
+    filter: drop-shadow(0px 4px 2px rgba(0, 0, 0, 0.8)) 
+            drop-shadow(0px 0px 15px rgba(255, 0, 0, 0.6));
+    
+    transition: transform 0.3s ease;
+  }
+  
+  header h1:hover { transform: scale(1.05); }
+
   header p { font-size:1.1rem; color:#f8fafc; max-width:750px; margin:0 auto; line-height:1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
   .lang-switch {
@@ -119,9 +142,17 @@
   footer a { color:#38bdf8; text-decoration:none; }
   footer a:hover { text-decoration:underline; }
 
+  /* ==================== मोबाइल के लिए सेटिंग ==================== */
   @media (max-width:600px) {
     header { padding: 50px 15px 40px; }
-    header h1 { font-size:1.8rem; }
+    
+    /* 🔴 मोबाइल के लिए फॉन्ट साइज़ (छोटा किया गया) */
+    header h1 { 
+      font-size: 1.8rem; 
+      letter-spacing: 1px;
+      filter: drop-shadow(0px 3px 1px rgba(0, 0, 0, 0.8)) drop-shadow(0px 0px 10px rgba(255, 0, 0, 0.6));
+    }
+    
     header p { font-size:0.95rem; }
     .lang-switch { top: 10px; right: 10px; }
     .search-box { flex-direction:column; border-radius:18px; padding:12px; gap:8px; }
@@ -408,10 +439,7 @@
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
-            <td>
-              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a>
-              ${store.altLink ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; margin-top:6px; font-size:0.72rem; padding:5px 10px;">🔍 Google</a>` : ''}
-            </td>
+            <td><a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a></td>
           </tr>`;
       });
 
@@ -487,4 +515,4 @@
 </script>
 
 </body>
-  </html>
+ </html>
