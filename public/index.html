@@ -15,55 +15,48 @@
     color:#fff; padding:65px 15px; text-align:center;
     position: relative;
   }
- /* 🚀 असली 3D ब्लॉक इफेक्ट (Real 3D Text) */
-header h1 { 
-  font-size: 3rem; 
-  margin-bottom: 15px; 
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: #ff3b3b; /* मुख्य लाल रंग */
-  
-  /* यहाँ हमने 10 लेयर की 3D शैडो दी है ताकि अक्षर उभर कर सामने आएं */
-  text-shadow: 
-    0px 1px 0px #cc0000,
-    0px 2px 0px #b30000,
-    0px 3px 0px #990000,
-    0px 4px 0px #800000,
-    0px 5px 0px #660000,
-    0px 6px 0px #4d0000,
-    0px 7px 0px #330000,
-    0px 8px 0px #1a0000,
-    0px 9px 10px rgba(0, 0, 0, 0.8), /* नीचे का डार्क शैडो */
-    0px 15px 20px rgba(0, 0, 0, 0.5); /* और भी नीचे का धुंधला शैडो */
-    
-  transition: transform 0.3s ease;
-}
 
-/* माउस ले जाने पर थोड़ा ज़ूम */
-header h1:hover { 
-  transform: scale(1.05) translateY(-5px); 
-}
+  /* SHOPPING DEALS - Responsive 3D Heading */
+  header h1 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(1.65rem, 4vw, 2.6rem);
+    font-weight: 900;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 0.5px;
 
-/* मोबाइल के लिए (साइज़ छोटा और 3D शैडो थोड़ी कम) */
-@media (max-width:600px) {
-  header h1 { 
-    font-size: 2rem; 
-    letter-spacing: 1px;
-    text-shadow: 
-      0px 1px 0px #cc0000,
-      0px 2px 0px #990000,
-      0px 3px 0px #660000,
-      0px 4px 0px #330000,
-      0px 5px 5px rgba(0, 0, 0, 0.8),
-      0px 8px 10px rgba(0, 0, 0, 0.5);
+    /* Multicolor 3D Gradient */
+    background: linear-gradient(
+      100deg,
+      #fff7ad 0%,
+      #ffbd35 18%,
+      #ff405f 38%,
+      #e879f9 58%,
+      #38bdf8 78%,
+      #ffffff 100%
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    /* 3D Depth + Glow */
+    -webkit-text-stroke: 0.5px rgba(255,255,255,0.35);
+    text-shadow: none;
+
+    filter:
+      drop-shadow(0 1px 0 #c24145)
+      drop-shadow(0 3px 0 #792c70)
+      drop-shadow(0 5px 4px rgba(0,0,0,0.65))
+      drop-shadow(0 0 8px rgba(56,189,248,0.35));
+
+    max-width: 100%;
+    padding: 2px 5px 7px;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
   }
-}
- 
-
- 
-    
-
+  
   header p { font-size:1.1rem; color:#f8fafc; max-width:750px; margin:0 auto; line-height:1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
   .lang-switch {
@@ -169,7 +162,6 @@ header h1:hover {
 
   @media (max-width:600px) {
     header { padding: 50px 15px 40px; }
-    header h1 { font-size:1.8rem; }
     header p { font-size:0.95rem; }
     .lang-switch { top: 10px; right: 10px; }
     .search-box { flex-direction:column; border-radius:18px; padding:12px; gap:8px; }
@@ -456,10 +448,7 @@ header h1:hover {
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
-            <td>
-              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a>
-              ${store.altLink ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; margin-top:6px; font-size:0.72rem; padding:5px 10px;">🔍 Google</a>` : ''}
-            </td>
+            <td><a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a></td>
           </tr>`;
       });
 
@@ -535,4 +524,4 @@ header h1:hover {
 </script>
 
 </body>
-</html>
+ </html>
