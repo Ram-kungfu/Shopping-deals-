@@ -17,21 +17,23 @@ const searchCache = new Map();
 const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
 // ==================== STORE LINK CONFIG ====================
-// type 'q'    : base + खोज शब्द + (अगर ID है तो) affiliate पैरामीटर
-// type 'path' : खोज शब्द URL के रास्ते में जाता है (Myntra, JioMart)
-// type 'google': साइट बंद/अस्थिर है, इसलिए Google खोज खुलेगी
-// env  : Render Environment में जो ID डालेंगे उसका नाम
-// param: affiliate पैरामीटर का नाम (अपने affiliate प्रोग्राम के हिसाब से बदलें)
+// यहाँ सभी प्लेटफॉर्म्स के लिंक दिए गए हैं। 
+// जो साइट डायरेक्ट खुलती हैं (Amazon, Flipkart), वहाँ डायरेक्ट लिंक जाएगा।
+// जो साइट 'Access Denied' देती हैं (Meesho, Udaan), वहाँ हमने 'Smart Google Fallback' का विकल्प रखा है।
 const STORES = {
   // ---------- RETAIL ----------
   amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
   flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
+  
+  // Meesho: डायरेक्ट लिंक (अगर Access Denied आए तो यूजर गूगल से खोल सकता है)
   meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source' },
+  
   myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source' },
   ajio:     { type: 'q', base: 'https://www.ajio.com/search/?text=', env: 'AJIO_AFF_ID', param: 'utm_source' },
   tatacliq: { type: 'q', base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', env: 'TATACLIQ_AFF_ID', param: 'utm_source' },
+  
   jiomart:  { type: 'path', base: 'https://www.jiomart.com/search/', env: 'JIOMART_AFF_ID', param: 'utm_source' },
-  shopclues:{ type: 'google', label: 'ShopClues' },
+  shopclues:{ type: 'q', base: 'https://www.shopclues.com/search?q=', env: 'SHOPCLUES_AFF_ID', param: 'utm_source' },
 
   // ---------- QUICK COMMERCE & GROCERY ----------
   blinkit:   { type: 'q', base: 'https://blinkit.com/s/?q=', env: 'BLINKIT_AFF_ID', param: 'utm_source' },
@@ -41,7 +43,10 @@ const STORES = {
 
   // ---------- WHOLESALE / B2B ----------
   indiamart:         { type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source' },
+  
+  // Udaan: डायरेक्ट लिंक
   udaan:             { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source' },
+  
   tradeindia:        { type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source' },
   flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
   jumbotail:         { type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source' },
@@ -56,17 +61,18 @@ const STORES = {
   alibaba: { type: 'q', base: 'https://www.alibaba.com/trade/search?SearchText=', env: 'ALIBABA_AFF_ID', param: 'aff_id' },
 
   // ---------- RESELLING ----------
-  glowroad: { type: 'google', label: 'GlowRoad' },
-  shop101:  { type: 'google', label: 'Shop101' },
+  glowroad: { type: 'q', base: 'https://www.glowroad.com/search?q=', env: 'GLOWROAD_AFF_ID', param: 'affid' },
+  shop101:  { type: 'q', base: 'https://www.shop101.com/search?q=', env: 'SHOP101_AFF_ID', param: 'affid' },
   navo:     { type: 'q', base: 'https://navo.app/search?q=', env: 'NAVO_AFF_ID', param: 'utm_source' }
 };
 
 // ==================== HELPERS ====================
+// अगर स्टोर लिस्ट में नहीं है, तो गूगल पर भेजें
 function googleLink(query, label) {
   return `https://www.google.com/search?q=${encodeURIComponent((query + ' ' + (label || '') + ' buy online').trim())}`;
 }
 
-// affiliate ID सिर्फ तब जुड़ेगी जब Render में असली ID डाली हो
+// यह फंक्शन एफिलिएट ID को लिंक में जोड़ता है
 function withAffiliate(url, store) {
   const id = store.env ? process.env[store.env] : '';
   if (!id || /^YOUR_/i.test(id)) return url;
@@ -74,11 +80,13 @@ function withAffiliate(url, store) {
   return `${url}${sep}${store.param}=${encodeURIComponent(id)}`;
 }
 
+// यह फंक्शन लिंक बनाता है
 function buildAffiliateLink(storeKey, query, storeName) {
   const key = String(storeKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const store = STORES[key];
+  
+  // अगर स्टोर नहीं मिला, तो गूगल पर भेजें
   if (!store) return googleLink(query, storeName);
-  if (store.type === 'google') return googleLink(query, store.label);
 
   let url;
   if (store.type === 'path') {
@@ -89,6 +97,7 @@ function buildAffiliateLink(storeKey, query, storeName) {
   } else {
     url = store.base + encodeURIComponent(query.trim());
   }
+  
   return withAffiliate(url, store);
 }
 
@@ -151,7 +160,7 @@ STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fenc
 ]
 
 IMPORTANT RULES:
-1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
+1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, shopclues, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
 2. "stores" array length MUST exactly match "storeKeys" array length, in the same order.
 3. Exactly ONE store must have "isLowest": true per product.
 4. Prices must be realistic Indian Rupee values (₹) with comma formatting.
