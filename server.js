@@ -18,42 +18,42 @@ const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
 // ==================== STORE LINK CONFIG ====================
 const STORES = {
-  // ---------- RETAIL ----------
-  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
-  flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
-  meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source' },
-  myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source' },
-  ajio:     { type: 'q', base: 'https://www.ajio.com/search/?text=', env: 'AJIO_AFF_ID', param: 'utm_source' },
-  tatacliq: { type: 'q', base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', env: 'TATACLIQ_AFF_ID', param: 'utm_source' },
-  jiomart:  { type: 'path', base: 'https://www.jiomart.com/search/', env: 'JIOMART_AFF_ID', param: 'utm_source' },
-  shopclues:{ type: 'google', label: 'ShopClues' },
+  // ---------- RETAIL (8 Stores) ----------
+  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', name: 'Amazon' },
+  flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid', name: 'Flipkart' },
+  meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source', name: 'Meesho' },
+  myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source', name: 'Myntra' },
+  ajio:     { type: 'q', base: 'https://www.ajio.com/search/?text=', env: 'AJIO_AFF_ID', param: 'utm_source', name: 'Ajio' },
+  tatacliq: { type: 'q', base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', env: 'TATACLIQ_AFF_ID', param: 'utm_source', name: 'TataCLiQ' },
+  jiomart:  { type: 'path', base: 'https://www.jiomart.com/search/', env: 'JIOMART_AFF_ID', param: 'utm_source', name: 'JioMart' },
+  shopclues:{ type: 'google', label: 'ShopClues', name: 'ShopClues' },
 
-  // ---------- QUICK COMMERCE & GROCERY ----------
-  blinkit:   { type: 'q', base: 'https://blinkit.com/s/?q=', env: 'BLINKIT_AFF_ID', param: 'utm_source' },
-  zepto:     { type: 'q', base: 'https://www.zeptonow.com/search?query=', env: 'ZEPTO_AFF_ID', param: 'utm_source' },
-  instamart: { type: 'q', base: 'https://www.swiggy.com/instamart/search?custom_back=true&query=', env: 'INSTAMART_AFF_ID', param: 'utm_source' },
-  bigbasket: { type: 'q', base: 'https://www.bigbasket.com/ps/?q=', env: 'BIGBASKET_AFF_ID', param: 'utm_source' },
+  // ---------- QUICK COMMERCE & GROCERY (4 Stores) ----------
+  blinkit:   { type: 'q', base: 'https://blinkit.com/s/?q=', env: 'BLINKIT_AFF_ID', param: 'utm_source', name: 'Blinkit' },
+  zepto:     { type: 'q', base: 'https://www.zeptonow.com/search?query=', env: 'ZEPTO_AFF_ID', param: 'utm_source', name: 'Zepto' },
+  instamart: { type: 'q', base: 'https://www.swiggy.com/instamart/search?custom_back=true&query=', env: 'INSTAMART_AFF_ID', param: 'utm_source', name: 'Instamart' },
+  bigbasket: { type: 'q', base: 'https://www.bigbasket.com/ps/?q=', env: 'BIGBASKET_AFF_ID', param: 'utm_source', name: 'BigBasket' },
 
-  // ---------- WHOLESALE / B2B ----------
-  indiamart:         { type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source' },
-  udaan:             { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source' },
-  tradeindia:        { type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source' },
-  flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid' },
-  jumbotail:         { type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source' },
-  ninjacart:         { type: 'q', base: 'https://ninjacart.in/search?q=', env: 'NINJACART_AFF_ID', param: 'utm_source' },
+  // ---------- WHOLESALE / B2B (6 Stores) ----------
+  indiamart:         { type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source', name: 'IndiaMART' },
+  udaan:             { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source', name: 'Udaan' },
+  tradeindia:        { type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source', name: 'TradeIndia' },
+  flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid', name: 'Flipkart Wholesale' },
+  jumbotail:         { type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source', name: 'Jumbotail' },
+  ninjacart:         { type: 'q', base: 'https://ninjacart.in/search?q=', env: 'NINJACART_AFF_ID', param: 'utm_source', name: 'NinjaCart' },
 
-  // ---------- COMMERCIAL / INDUSTRIAL ----------
-  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag' },
-  moglix:         { type: 'q', base: 'https://www.moglix.com/search?q=', env: 'MOGLIX_AFF_ID', param: 'utm_source' },
-  industrybuying: { type: 'q', base: 'https://www.industrybuying.com/search/?q=', env: 'INDUSTRYBUYING_AFF_ID', param: 'utm_source' },
+  // ---------- COMMERCIAL / INDUSTRIAL (3 Stores) ----------
+  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', name: 'Amazon Business' },
+  moglix:         { type: 'q', base: 'https://www.moglix.com/search?q=', env: 'MOGLIX_AFF_ID', param: 'utm_source', name: 'Moglix' },
+  industrybuying: { type: 'q', base: 'https://www.industrybuying.com/search/?q=', env: 'INDUSTRYBUYING_AFF_ID', param: 'utm_source', name: 'IndustryBuying' },
 
-  // ---------- GLOBAL ----------
-  alibaba: { type: 'q', base: 'https://www.alibaba.com/trade/search?SearchText=', env: 'ALIBABA_AFF_ID', param: 'aff_id' },
+  // ---------- GLOBAL (1 Store) ----------
+  alibaba: { type: 'q', base: 'https://www.alibaba.com/trade/search?SearchText=', env: 'ALIBABA_AFF_ID', param: 'aff_id', name: 'Alibaba' },
 
-  // ---------- RESELLING ----------
-  glowroad: { type: 'google', label: 'GlowRoad' },
-  shop101:  { type: 'google', label: 'Shop101' },
-  navo:     { type: 'q', base: 'https://navo.app/search?q=', env: 'NAVO_AFF_ID', param: 'utm_source' }
+  // ---------- RESELLING (4 Stores) ----------
+  glowroad: { type: 'google', label: 'GlowRoad', name: 'GlowRoad' },
+  shop101:  { type: 'google', label: 'Shop101', name: 'Shop101' },
+  navo:     { type: 'q', base: 'https://navo.app/search?q=', env: 'NAVO_AFF_ID', param: 'utm_source', name: 'Navo' }
 };
 
 // ==================== HELPERS ====================
@@ -114,23 +114,23 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
   console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
 }
 
-// 🔴 यहाँ प्रॉम्प्ट को बहुत सख्त कर दिया गया है
+// 🔴 प्रॉम्प्ट सख्त किया गया है ताकि AI कम से कम 6 कार्ड्स और हर कार्ड में ज्यादा स्टोर्स दे
 function buildPrompt(query) {
   return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
 
 The user is searching for: "${query}".
 
 YOUR STRICT TASK:
-You MUST generate an array containing AT LEAST 5 to 6 distinct product objects. 
+You MUST generate an array containing AT LEAST 6 distinct product objects. 
 One product MUST belong to each of these 6 categories:
-1. "retail" (e.g., Amazon, Flipkart)
-2. "wholesale" (e.g., IndiaMART, Udaan)
-3. "reselling" (e.g., Meesho, GlowRoad)
-4. "grocery" (e.g., Blinkit, Zepto - if the item is grocery related, else use standard grocery stores)
-5. "commercial" (e.g., Moglix, IndustryBuying - for industrial/tools)
-6. "global" (e.g., Alibaba)
+1. "retail"
+2. "wholesale"
+3. "reselling"
+4. "grocery"
+5. "commercial"
+6. "global"
 
-DO NOT skip any category. If the search is for clothes, still generate related bulk, reselling, commercial, and global items for it.
+DO NOT skip any category. 
 
 STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fences, no explanations):
 
@@ -156,46 +156,62 @@ IMPORTANT RULES:
 5. Leave "image" as an empty string. Do NOT include the "link" field — links are generated by the server.`;
 }
 
+// 🔴 फॉलबैक में भी अब सभी कैटेगरीज़ के सभी स्टोर्स जोड़ दिए गए हैं
 function getFallbackResults(query) {
   return [
     {
       category: 'retail', title: `${query} — Retail Pick`, image: '', badgeText: 'Retail / Consumer',
-      storeKeys: ['amazon', 'flipkart'],
+      storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'],
       stores: [
         { name: 'Amazon', price: '₹1,499', isLowest: false },
-        { name: 'Flipkart', price: '₹1,299', isLowest: true }
+        { name: 'Flipkart', price: '₹1,299', isLowest: true },
+        { name: 'Myntra', price: '₹1,599', isLowest: false },
+        { name: 'Ajio', price: '₹1,399', isLowest: false },
+        { name: 'TataCLiQ', price: '₹1,450', isLowest: false },
+        { name: 'JioMart', price: '₹1,350', isLowest: false },
+        { name: 'Meesho', price: '₹1,199', isLowest: false },
+        { name: 'ShopClues', price: '₹1,250', isLowest: false }
       ]
     },
     {
       category: 'wholesale', title: `${query} — Wholesale Pack`, image: '', badgeText: 'Wholesale / B2B',
-      storeKeys: ['indiamart', 'udaan'],
+      storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
       stores: [
         { name: 'IndiaMART', price: '₹850 / pc', isLowest: true },
-        { name: 'Udaan', price: '₹950 / pc', isLowest: false }
+        { name: 'Udaan', price: '₹950 / pc', isLowest: false },
+        { name: 'TradeIndia', price: '₹900 / pc', isLowest: false },
+        { name: 'Flipkart Wholesale', price: '₹880 / pc', isLowest: false },
+        { name: 'Jumbotail', price: '₹920 / pc', isLowest: false },
+        { name: 'NinjaCart', price: '₹890 / pc', isLowest: false }
       ]
     },
     {
       category: 'reselling', title: `${query} — Reseller Deal`, image: '', badgeText: 'Reselling & Social',
-      storeKeys: ['meesho', 'navo'],
+      storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'],
       stores: [
         { name: 'Meesho', price: '₹349', isLowest: true },
-        { name: 'Navo', price: '₹375', isLowest: false }
+        { name: 'Navo', price: '₹375', isLowest: false },
+        { name: 'GlowRoad', price: '₹399', isLowest: false },
+        { name: 'Shop101', price: '₹380', isLowest: false }
       ]
     },
     {
       category: 'grocery', title: `${query} — Grocery Quick Pick`, image: '', badgeText: 'Grocery & Quick',
-      storeKeys: ['blinkit', 'zepto'],
+      storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
       stores: [
         { name: 'Blinkit', price: '₹120', isLowest: true },
-        { name: 'Zepto', price: '₹135', isLowest: false }
+        { name: 'Zepto', price: '₹135', isLowest: false },
+        { name: 'Instamart', price: '₹125', isLowest: false },
+        { name: 'BigBasket', price: '₹110', isLowest: false }
       ]
     },
     {
       category: 'commercial', title: `${query} — Industrial Grade`, image: '', badgeText: 'Commercial / Industrial',
-      storeKeys: ['moglix', 'industrybuying'],
+      storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'],
       stores: [
         { name: 'Moglix', price: '₹4,500', isLowest: true },
-        { name: 'IndustryBuying', price: '₹4,800', isLowest: false }
+        { name: 'IndustryBuying', price: '₹4,800', isLowest: false },
+        { name: 'Amazon Business', price: '₹4,600', isLowest: false }
       ]
     },
     {
@@ -255,13 +271,10 @@ app.post('/api/search', async (req, res) => {
     }
 
     let usedFallback = false;
-    // अगर AI ने कोई रिजल्ट नहीं दिया या पूरी तरह फेल हो गया
     if (!Array.isArray(products) || products.length === 0) {
       products = getFallbackResults(cleanQuery);
       usedFallback = true;
     } else {
-      // अगर AI ने रिजल्ट दिया, तो भी चेक करें कि क्या कोई कैटेगरी मिसिंग है
-      // अगर मिसिंग है, तो फॉलबैक से उस कैटेगरी का डेटा जोड़ दें
       const existingCats = products.map(p => p.category);
       const fallbackData = getFallbackResults(cleanQuery);
       
@@ -275,33 +288,70 @@ app.post('/api/search', async (req, res) => {
     const finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
-        const storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
-        const stores = (Array.isArray(item.stores) ? item.stores : [])
+        let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
+        let stores = (Array.isArray(item.stores) ? item.stores : [])
           .filter(s => s && s.name)
           .map((store, idx) => {
             const keyFromAI = storeKeys[idx] || String(store.name).toLowerCase().replace(/\s+/g, '');
-            
-            // 🔴 यहाँ हम चेक कर रहे हैं कि स्टोर meesho या udaan है या नहीं
-            const isSpecialStore = (keyFromAI === 'meesho' || keyFromAI === 'udaan');
-            
             return {
               name: String(store.name),
               price: String(store.price || '—'),
               isLowest: !!store.isLowest,
+              key: keyFromAI,
               link: buildAffiliateLink(keyFromAI, cleanQuery, store.name),
-              // अगर meesho/udaan है, तो ही altLink (गूगल) भेजेंगे
-              altLink: isSpecialStore ? googleLink(cleanQuery, store.name) : null 
+              altLink: (keyFromAI === 'meesho' || keyFromAI === 'udaan') ? googleLink(cleanQuery, store.name) : null 
             };
           });
 
+        // 🔴 स्मार्ट फिल्टर: हर कैटेगरी के सभी स्टोर्स को अपने आप जोड़ दें (जो AI ने नहीं दिए)
+        const categoryStoresMap = {
+          retail: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'],
+          wholesale: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
+          reselling: ['meesho', 'navo', 'glowroad', 'shop101'],
+          grocery: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
+          commercial: ['moglix', 'industrybuying', 'amazonbusiness'],
+          global: ['alibaba']
+        };
+
+        const requiredStores = categoryStoresMap[item.category] || [];
+        const existingKeys = stores.map(s => s.key);
+
+        requiredStores.forEach(reqKey => {
+          if (!existingKeys.includes(reqKey)) {
+            const storeConfig = STORES[reqKey];
+            if (storeConfig) {
+              stores.push({
+                name: storeConfig.name,
+                price: '₹' + (Math.floor(Math.random() * 500) + 400), // डमी प्राइस
+                isLowest: false,
+                key: reqKey,
+                link: buildAffiliateLink(reqKey, cleanQuery, storeConfig.name),
+                altLink: (reqKey === 'meesho' || reqKey === 'udaan') ? googleLink(cleanQuery, storeConfig.name) : null
+              });
+            }
+          }
+        });
+
+        // सुनिश्चित करें कि हर प्रोडक्ट में कम से कम 1 स्टोर 'Lowest' हो
         if (stores.length > 0) {
           const flagged = stores.filter(s => s.isLowest).length;
-          if (flagged !== 1) {
+          if (flagged === 0) {
             let minIdx = 0;
             stores.forEach((s, i) => {
               if (priceToNumber(s.price) < priceToNumber(stores[minIdx].price)) minIdx = i;
             });
-            stores.forEach((s, i) => { s.isLowest = i === minIdx; });
+            stores[minIdx].isLowest = true;
+          } else if (flagged > 1) {
+            // अगर एक से ज्यादा 'Lowest' हैं, तो सिर्फ सबसे सस्ते को रखें
+            let minIdx = -1;
+            let minPrice = Infinity;
+            stores.forEach((s, i) => {
+              if (s.isLowest) {
+                const p = priceToNumber(s.price);
+                if (p < minPrice) { minPrice = p; minIdx = i; }
+              }
+            });
+            stores.forEach((s, i) => { s.isLowest = (i === minIdx); });
           }
         }
 
