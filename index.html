@@ -76,20 +76,20 @@
   .search-section { max-width:820px; margin:-32px auto 30px; padding:0 15px; position: relative; z-index: 10; }
   .search-box { display:flex; background:#fff; padding:10px; border-radius:60px; box-shadow:0 15px 35px rgba(15,23,42,0.18); }
   .search-box input {
-    flex:1; border:2px solid #fbcfe8; outline:none; padding:14px 22px;
-    font-size:1.05rem; border-radius:60px; background:#fdf2f8; 
-    color: #000000; /* 🔴 यहाँ टेक्स्ट काला हो जाएगा */
+    flex:1; border:2px solid #fbcfe8; outline:none; padding:12px 20px;
+    font-size:1rem; border-radius:60px; background:#fdf2f8; 
+    color: #000000;
     font-weight: 700;
   }
 
   .search-box input::placeholder { 
-    color: #000000; /* 🔴 यहाँ 'कोई भी सामान...' वाला टेक्स्ट काला हो जाएगा */
+    color: #000000; 
     opacity: 0.8; 
   }
   
   .search-box button {
-    background:#2563eb; color:#fff; border:none; padding:14px 28px;
-    font-size:1rem; border-radius:60px; cursor:pointer; font-weight:600;
+    background:#2563eb; color:#fff; border:none; padding:12px 24px;
+    font-size:0.95rem; border-radius:60px; cursor:pointer; font-weight:600;
     transition:background 0.25s; white-space:nowrap; margin-left: 10px;
   }
   .search-box button:hover { background:#1d4ed8; }
@@ -145,7 +145,7 @@
   .product-title { font-size:1.15rem; font-weight:700; margin-bottom:12px; color:#0f172a; line-height:1.35; }
 
   .comparison-table { width:100%; border-collapse:collapse; margin-top:10px; }
-  .comparison-table th, .comparison-table td { padding:9px 10px; text-align:left; font-size:0.9rem; border-bottom:1px solid #f1f5f9; }
+  .comparison-table th, .comparison-table td { padding:9px 10px; text-align:left; font-size:0.9rem; border-bottom:1px solid #f1f5f9; vertical-align: middle; }
   .comparison-table th { color:#64748b; font-weight:600; font-size:0.8rem; text-transform:uppercase; }
   .price { font-weight:700; color:#16a34a; }
   .lowest-price { color:#dc2626; background:#fee2e2; padding:3px 8px; border-radius:4px; display:inline-block; }
@@ -174,14 +174,15 @@
     .lang-switch { top: 10px; right: 10px; }
     .search-box { flex-direction:column; border-radius:18px; padding:12px; gap:8px; }
     .search-box input {
-      border-radius:12px; padding:12px 16px; width: 100%;
-      color: #000000; /* 🔴 टाइप किया हुआ टेक्स्ट काला */
+      border-radius:12px; padding:10px 14px; width: 100%;
+      color: #000000;
+      font-size: 0.95rem;
     }
     .search-box input::placeholder { 
-      color: #000000; /* 🔴 'कोई भी सामान सर्च करें' वाला टेक्स्ट काला */
+      color: #000000; 
       opacity: 0.9; 
     }
-    .search-box button { border-radius:12px; padding:12px; width: 100%; margin-left: 0; }
+    .search-box button { border-radius:12px; padding:10px; width: 100%; margin-left: 0; }
     .section-title { font-size:1.25rem; }
     .card-body { padding:16px; }
     .comparison-table th, .comparison-table td { padding:7px 6px; font-size:0.82rem; }
@@ -456,18 +457,20 @@
         const cheapestText = currentLang === 'hi' ? ' (सस्ता)' : ' (Lowest)';
         const priceText = store.isLowest ? `${store.price}${cheapestText}` : store.price;
 
-        // 🔴 यहाँ Google बटन जोड़ा गया है (अगर store में altLink है तो ही दिखेगा)
+        // 🔴 यहाँ Google बटन जोड़ा गया है, जिसे हमने flex में रखा है ताकि एक ही लाइन में रहे
         const googleBtn = store.altLink 
-          ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; padding:7px 10px; font-size:0.75rem; margin-left:5px;" title="Google पर सर्च करें">🔍 Google</a>` 
+          ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; padding:7px 10px; font-size:0.75rem; flex:1; text-align:center;" title="Google पर सर्च करें">🔍 Google</a>` 
           : '';
 
         storesHtml += `
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
-            <td style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
-              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a>
-              ${googleBtn}
+            <td>
+              <div style="display:flex; gap:6px; align-items:center; justify-content:center; width:100%;">
+                <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg} flex:1; text-align:center;">${t.buyBtn}</a>
+                ${googleBtn}
+              </div>
             </td>
           </tr>`;
       });
