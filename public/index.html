@@ -408,7 +408,10 @@
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
-            <td><a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a></td>
+            <td>
+              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg}">${t.buyBtn}</a>
+              ${store.altLink ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; margin-top:6px; font-size:0.72rem; padding:5px 10px;">🔍 Google</a>` : ''}
+            </td>
           </tr>`;
       });
 
