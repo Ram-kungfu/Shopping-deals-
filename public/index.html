@@ -15,7 +15,27 @@
     color:#fff; padding:65px 15px; text-align:center;
     position: relative;
   }
-  header h1 { font-size:2.6rem; margin-bottom:10px; color:#38bdf8; letter-spacing:0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+    header h1 {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    
+    /* मल्टी-कलर ग्रेडिएंट (लाल, नारंगी, पीला और चमकदार शेड्स) */
+    background: linear-gradient(135deg, #ff0844, #ffb199, #f7ff00, #ff2a68);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* 3D उभरा हुआ और गहरा शैडो इफ़ेक्ट */
+    text-shadow: 
+      2px 2px 0px #990000, 
+      4px 4px 0px #660000, 
+      6px 6px 20px rgba(0, 0, 0, 0.8);
+      
+    filter: drop-shadow(0 4px 10px rgba(255, 8, 68, 0.5));
+    margin-bottom: 10px;
+  }
+
   header p { font-size:1.1rem; color:#f8fafc; max-width:750px; margin:0 auto; line-height:1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
   .lang-switch {
