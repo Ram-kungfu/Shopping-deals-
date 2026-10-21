@@ -90,15 +90,27 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 फॉलबैक रेंज (अगर AI नहीं देता तो यह काम आएगा)
+// 🔴 स्मार्ट कीवर्ड रेंज (अगर AI से कीमत न मिले, तो यह काम आएगा)
 function getFallbackPriceRange(category, title) {
   const t = String(title).toLowerCase();
-  if (category === 'retail') return { min: 500, max: 5000 };
+  
+  if (category === 'retail') {
+    if (t.includes('mobile') || t.includes('phone') || t.includes('5g') || t.includes('samsung') || t.includes('iphone')) return { min: 10000, max: 35000 };
+    if (t.includes('laptop')) return { min: 30000, max: 80000 };
+    if (t.includes('computer') || t.includes('pc') || t.includes('desktop')) return { min: 15000, max: 60000 };
+    if (t.includes('tv') || t.includes('television')) return { min: 10000, max: 50000 };
+    if (t.includes('fridge') || t.includes('refrigerator')) return { min: 8000, max: 40000 };
+    if (t.includes('ac') || t.includes('air conditioner')) return { min: 20000, max: 60000 };
+    if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) return { min: 250, max: 3000 };
+    if (t.includes('shoe') || t.includes('sneaker')) return { min: 500, max: 5000 };
+    return { min: 500, max: 5000 };
+  } 
   if (category === 'wholesale') return { min: 200, max: 2000 };
   if (category === 'reselling') return { min: 150, max: 800 };
   if (category === 'grocery') return { min: 50, max: 500 };
   if (category === 'commercial') return { min: 1000, max: 10000 };
   if (category === 'global') return { min: 500, max: 5000 };
+  
   return { min: 250, max: 3000 };
 }
 
@@ -106,19 +118,15 @@ function getFallbackPriceRange(category, title) {
 function getStorePriceMultiplier(storeKey) {
   const key = String(storeKey).toLowerCase();
   
-  // रीसेलिंग साइट्स (सबसे सस्ता)
   if (key === 'meesho' || key === 'udaan' || key === 'glowroad' || key === 'shop101' || key === 'navo') {
     return 1.0; 
   }
-  // सामान्य साइट्स
   if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues' || key === 'tatacliq') {
     return 1.15; 
   }
-  // फैशन साइट्स (थोड़ा महंगा)
   if (key === 'myntra' || key === 'ajio') {
     return 1.30; 
   }
-  // बड़ी साइट (सबसे महंगा)
   if (key === 'amazon' || key === 'amazonbusiness') {
     return 1.45; 
   }
@@ -154,7 +162,7 @@ One product MUST belong to each of these 6 categories:
 5. "commercial"
 6. "global"
 
-For EACH product, you MUST also provide a realistic price range (in Indian Rupees) based on what the product actually costs in the real world. 
+For EACH product, you MUST provide a realistic price range (in Indian Rupees) based on what the product actually costs in the real world. 
 For example: a smartphone should be around ₹10,000-₹30,000, a shirt should be around ₹300-₹1500, a laptop should be around ₹30,000-₹80,000.
 
 STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fences, no explanations):
@@ -180,12 +188,12 @@ IMPORTANT RULES:
 
 function getFallbackResults(query) {
   return [
-    { category: 'retail', title: `${query}`, minPrice: 500, maxPrice: 5000, badgeText: 'Retail / Consumer', storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'] },
-    { category: 'wholesale', title: `Bulk ${query}`, minPrice: 200, maxPrice: 2000, badgeText: 'Wholesale / B2B', storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'] },
-    { category: 'reselling', title: `${query} for Resellers`, minPrice: 150, maxPrice: 800, badgeText: 'Reselling & Social', storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'] },
-    { category: 'grocery', title: `${query} (Quick)`, minPrice: 50, maxPrice: 500, badgeText: 'Grocery & Quick', storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'] },
-    { category: 'commercial', title: `Bulk Order ${query}`, minPrice: 1000, maxPrice: 10000, badgeText: 'Commercial / Industrial', storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'] },
-    { category: 'global', title: `Export Quality ${query}`, minPrice: 500, maxPrice: 5000, badgeText: 'Global / Import', storeKeys: ['alibaba'] }
+    { category: 'retail', title: `${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Retail / Consumer', storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'] },
+    { category: 'wholesale', title: `Bulk ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Wholesale / B2B', storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'] },
+    { category: 'reselling', title: `${query} for Resellers`, minPrice: 0, maxPrice: 0, badgeText: 'Reselling & Social', storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'] },
+    { category: 'grocery', title: `${query} (Quick)`, minPrice: 0, maxPrice: 0, badgeText: 'Grocery & Quick', storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'] },
+    { category: 'commercial', title: `Bulk Order ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Commercial / Industrial', storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'] },
+    { category: 'global', title: `Export Quality ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Global / Import', storeKeys: ['alibaba'] }
   ];
 }
 
@@ -267,8 +275,15 @@ app.post('/api/search', async (req, res) => {
         const requiredStores = categoryStoresMap[item.category] || ['meesho', 'flipkart', 'amazon'];
 
         // 🔴 AI की दी हुई रेंज का उपयोग करें (अगर AI ने नहीं दी, तो फॉलबैक का उपयोग करें)
-        let min = Number(item.minPrice) || getFallbackPriceRange(item.category, item.title).min;
-        let max = Number(item.maxPrice) || getFallbackPriceRange(item.category, item.title).max;
+        let min = Number(item.minPrice) || 0;
+        let max = Number(item.maxPrice) || 0;
+
+        // अगर AI ने 0 या गलत कीमत दी है, तो हमारा स्मार्ट फॉलबैक इस्तेमाल करें
+        if (min <= 0 || max <= 0) {
+          const fallback = getFallbackPriceRange(item.category, item.title);
+          min = fallback.min;
+          max = fallback.max;
+        }
 
         // सुनिश्चित करें कि max, min से कम न हो
         if (max < min) max = min * 2;
