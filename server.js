@@ -90,7 +90,7 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब मिनिमम ₹200-₹300)
+// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब एकदम सही)
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
@@ -98,7 +98,7 @@ function getCategoryBasePrice(category, title) {
   if (category === 'retail') {
     if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 25000; }
     else if (t.includes('laptop')) { min = 30000; max = 70000; }
-    // रिटेल में कपड़े ₹200 से शुरू (मिनिमम 300 के अंदर)
+    // रिटेल में कपड़े ₹200 से ₹1500
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 200; max = 1500; }
     else { min = 200; max = 3000; }
   } 
@@ -254,18 +254,23 @@ app.post('/api/search', async (req, res) => {
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
         let stores = [];
 
-        // 🔴 यहाँ हम हर कैटेगरी के हिसाब से प्राइस रेंज तय करेंगे
+        // 🔴 कैटेगरी के हिसाब से प्राइस रेंज तय करें
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
-        // 🔴 सुनिश्चित करें कि रेंज हमेशा कम से शुरू हो (₹200-₹300 के आस-पास)
-        // ताकि कम से कम एक स्टोर का बेस प्राइस ₹300 के अंदर ही हो
-        let basePrice = min + Math.floor(Math.random() * 100);
-
+        // 🔴 यहाँ हम हर स्टोर के लिए अलग-अलग बेस प्राइस तय करेंगे (₹200-₹300 के आस-पास)
         storeKeys.forEach((key, idx) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
-            // हर स्टोर के लिए बेस प्राइस से थोड़ा ज्यादा रखें (मैक्सिमम 2 गुना तक)
-            const increase = Math.floor(Math.random() * basePrice) + 50;
+            // हर स्टोर के लिए एक अलग रैंडम बेस प्राइस (min से शुरू होकर)
+            let basePrice = min + Math.floor(Math.random() * 150); // 0 से 150 का रैंडम अंतर
+            
+            // अगर यह सबसे पहला स्टोर है, तो उसे हमेशा सबसे कम रेट दें (जैसे ₹200)
+            if (idx === 0) {
+              basePrice = min + Math.floor(Math.random() * 50); 
+            }
+
+            // अब रेंज बनाएं (बेस प्राइस से लेकर 2 गुना तक)
+            const increase = Math.floor(Math.random() * (basePrice * 0.8)) + 50;
             const highPrice = basePrice + increase;
 
             stores.push({
@@ -274,7 +279,6 @@ app.post('/api/search', async (req, res) => {
               isLowest: false, 
               key: key,
               link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
-              // altLink हटा दिया गया है (Google बटन नहीं दिखेगा)
             });
           }
         });
@@ -283,7 +287,6 @@ app.post('/api/search', async (req, res) => {
         let minPriceIndex = -1;
         let minPriceValue = Infinity;
         stores.forEach((s, i) => {
-          // "₹500 - ₹1200" जैसे स्ट्रिंग से सबसे छोटा नंबर (500) निकालें
           const match = String(s.price).match(/₹(\d+)/);
           if (match) {
             const num = parseInt(match[1], 10);
