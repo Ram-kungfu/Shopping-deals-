@@ -460,20 +460,12 @@
         const cheapestText = currentLang === 'hi' ? ' (सस्ता)' : ' (Lowest)';
         const priceText = store.isLowest ? `${store.price}${cheapestText}` : store.price;
 
-        // 🔴 यहाँ Google बटन जोड़ा गया है, जिसे हमने flex में रखा है ताकि एक ही लाइन में रहे
-        const googleBtn = store.altLink 
-          ? `<a href="${escapeHtml(safeLink(store.altLink))}" target="_blank" rel="noopener noreferrer" class="visit-btn" style="background:#64748b; padding:7px 10px; font-size:0.75rem; flex:1; text-align:center;" title="Google पर सर्च करें">🔍 Google</a>` 
-          : '';
-
         storesHtml += `
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
             <td>
-              <div style="display:flex; gap:6px; align-items:center; justify-content:center; width:100%;">
-                <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg} flex:1; text-align:center;">${t.buyBtn}</a>
-                ${googleBtn}
-              </div>
+              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg} width:100%; text-align:center; display:block;">${t.buyBtn}</a>
             </td>
           </tr>`;
       });
@@ -549,4 +541,4 @@
 </script>
 
 </body>
- </html>
+</html>
