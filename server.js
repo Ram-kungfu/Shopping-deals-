@@ -86,6 +86,17 @@ function buildAffiliateLink(storeKey, query, storeName) {
   return withAffiliate(url, store);
 }
 
+// 🔧 नया: लिंक के लिए सटीक खोज शब्द = पूरा प्रोडक्ट नाम (ब्रैकेट वाला हिस्सा हटाकर)
+function makeSearchTerm(title, fallback) {
+  const cleaned = String(title || '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80)
+    .trim();
+  return cleaned || fallback;
+}
+
 function placeholderImage(text) {
   const label = String(text || 'Product').slice(0, 24).replace(/[<>&"']/g, '');
   const svg =
@@ -96,9 +107,10 @@ function placeholderImage(text) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
+// 🔧 सुधारा: कॉमा हटाकर पहली संख्या (दशमलव समेत) पढ़ता है। "₹1,299.50" → 1299.5, "₹850 / pc" → 850
 function priceToNumber(price) {
-  const n = parseInt(String(price).replace(/[^\d]/g, ''), 10);
-  return Number.isNaN(n) ? Infinity : n;
+  const m = String(price).replace(/,/g, '').match(/\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : Infinity;
 }
 
 // ==================== GEMINI ====================
@@ -288,6 +300,10 @@ app.post('/api/search', async (req, res) => {
     const finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
+        const title = item.title ? String(item.title) : cleanQuery;
+        // 🔧 नया: लिंक इसी प्रोडक्ट के पूरे नाम से बनेंगे
+        const searchTerm = makeSearchTerm(title, cleanQuery);
+
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
         let stores = (Array.isArray(item.stores) ? item.stores : [])
           .filter(s => s && s.name)
@@ -296,10 +312,10 @@ app.post('/api/search', async (req, res) => {
             return {
               name: String(store.name),
               price: String(store.price || '—'),
-              isLowest: !!store.isLowest,
+              isLowest: false,
               key: keyFromAI,
-              link: buildAffiliateLink(keyFromAI, cleanQuery, store.name),
-              altLink: (keyFromAI === 'meesho' || keyFromAI === 'udaan') ? googleLink(cleanQuery, store.name) : null 
+              link: buildAffiliateLink(keyFromAI, searchTerm, store.name),
+              altLink: (keyFromAI === 'meesho' || keyFromAI === 'udaan') ? googleLink(searchTerm, store.name) : null 
             };
           });
 
@@ -325,37 +341,24 @@ app.post('/api/search', async (req, res) => {
                 price: '₹' + (Math.floor(Math.random() * 500) + 400), // डमी प्राइस
                 isLowest: false,
                 key: reqKey,
-                link: buildAffiliateLink(reqKey, cleanQuery, storeConfig.name),
-                altLink: (reqKey === 'meesho' || reqKey === 'udaan') ? googleLink(cleanQuery, storeConfig.name) : null
+                link: buildAffiliateLink(reqKey, searchTerm, storeConfig.name),
+                altLink: (reqKey === 'meesho' || reqKey === 'udaan') ? googleLink(searchTerm, storeConfig.name) : null
               });
             }
           }
         });
 
-        // सुनिश्चित करें कि हर प्रोडक्ट में कम से कम 1 स्टोर 'Lowest' हो
+        // 🔧 "(सस्ता)" का सही गणित: सभी स्टोर्स जुड़ने के बाद, असली सबसे कम संख्या वाले पर ही निशान
         if (stores.length > 0) {
-          const flagged = stores.filter(s => s.isLowest).length;
-          if (flagged === 0) {
-            let minIdx = 0;
-            stores.forEach((s, i) => {
-              if (priceToNumber(s.price) < priceToNumber(stores[minIdx].price)) minIdx = i;
-            });
-            stores[minIdx].isLowest = true;
-          } else if (flagged > 1) {
-            // अगर एक से ज्यादा 'Lowest' हैं, तो सिर्फ सबसे सस्ते को रखें
-            let minIdx = -1;
-            let minPrice = Infinity;
-            stores.forEach((s, i) => {
-              if (s.isLowest) {
-                const p = priceToNumber(s.price);
-                if (p < minPrice) { minPrice = p; minIdx = i; }
-              }
-            });
-            stores.forEach((s, i) => { s.isLowest = (i === minIdx); });
-          }
+          let minIdx = -1;
+          let minPrice = Infinity;
+          stores.forEach((s, i) => {
+            const p = priceToNumber(s.price);
+            if (p < minPrice) { minPrice = p; minIdx = i; }
+          });
+          stores.forEach((s, i) => { s.isLowest = (i === minIdx); });
         }
 
-        const title = item.title ? String(item.title) : cleanQuery;
         const aiImage = typeof item.image === 'string' ? item.image : '';
         const image =
           aiImage.startsWith('https://') && !aiImage.includes('placeholder.com')
