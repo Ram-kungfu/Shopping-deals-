@@ -86,17 +86,6 @@ function buildAffiliateLink(storeKey, query, storeName) {
   return withAffiliate(url, store);
 }
 
-// 🔧 नया: लिंक के लिए सटीक खोज शब्द = पूरा प्रोडक्ट नाम (ब्रैकेट वाला हिस्सा हटाकर)
-function makeSearchTerm(title, fallback) {
-  const cleaned = String(title || '')
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 80)
-    .trim();
-  return cleaned || fallback;
-}
-
 function placeholderImage(text) {
   const label = String(text || 'Product').slice(0, 24).replace(/[<>&"']/g, '');
   const svg =
@@ -107,10 +96,9 @@ function placeholderImage(text) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-// 🔧 सुधारा: कॉमा हटाकर पहली संख्या (दशमलव समेत) पढ़ता है। "₹1,299.50" → 1299.5, "₹850 / pc" → 850
 function priceToNumber(price) {
-  const m = String(price).replace(/,/g, '').match(/\d+(\.\d+)?/);
-  return m ? parseFloat(m[0]) : Infinity;
+  const n = parseInt(String(price).replace(/[^\d]/g, ''), 10);
+  return Number.isNaN(n) ? Infinity : n;
 }
 
 // ==================== GEMINI ====================
@@ -300,10 +288,6 @@ app.post('/api/search', async (req, res) => {
     const finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
-        const title = item.title ? String(item.title) : cleanQuery;
-        // 🔧 नया: लिंक इसी प्रोडक्ट के पूरे नाम से बनेंगे
-        const searchTerm = makeSearchTerm(title, cleanQuery);
-
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
         let stores = (Array.isArray(item.stores) ? item.stores : [])
           .filter(s => s && s.name)
@@ -312,10 +296,10 @@ app.post('/api/search', async (req, res) => {
             return {
               name: String(store.name),
               price: String(store.price || '—'),
-              isLowest: false,
+              isLowest: false, // यहाँ से हम false कर रहे हैं, Lowest हम नीचे गणित से निकालेंगे
               key: keyFromAI,
-              link: buildAffiliateLink(keyFromAI, searchTerm, store.name),
-              altLink: (keyFromAI === 'meesho' || keyFromAI === 'udaan') ? googleLink(searchTerm, store.name) : null 
+              link: buildAffiliateLink(keyFromAI, cleanQuery, store.name),
+              altLink: (keyFromAI === 'meesho' || keyFromAI === 'udaan') ? googleLink(cleanQuery, store.name) : null 
             };
           });
 
@@ -338,27 +322,74 @@ app.post('/api/search', async (req, res) => {
             if (storeConfig) {
               stores.push({
                 name: storeConfig.name,
-                price: '₹' + (Math.floor(Math.random() * 500) + 400), // डमी प्राइस
+                price: '', // बाद में भरेंगे
                 isLowest: false,
                 key: reqKey,
-                link: buildAffiliateLink(reqKey, searchTerm, storeConfig.name),
-                altLink: (reqKey === 'meesho' || reqKey === 'udaan') ? googleLink(searchTerm, storeConfig.name) : null
+                link: buildAffiliateLink(reqKey, cleanQuery, storeConfig.name),
+                altLink: (reqKey === 'meesho' || reqKey === 'udaan') ? googleLink(cleanQuery, storeConfig.name) : null
               });
             }
           }
         });
 
-        // 🔧 "(सस्ता)" का सही गणित: सभी स्टोर्स जुड़ने के बाद, असली सबसे कम संख्या वाले पर ही निशान
+        // 🔴 प्राइस एडजस्टर (Smart Price Adjuster): 
+        // अगर AI ने किसी प्रोडक्ट की कीमत बहुत ज्यादा दी है, तो उसे कम करें
         if (stores.length > 0) {
-          let minIdx = -1;
           let minPrice = Infinity;
-          stores.forEach((s, i) => {
-            const p = priceToNumber(s.price);
-            if (p < minPrice) { minPrice = p; minIdx = i; }
+          
+          // 1. सबसे कम कीमत वाला स्टोर ढूंढें
+          stores.forEach(s => {
+            if (s.price && s.price !== '—' && s.price !== '') {
+              const p = priceToNumber(s.price);
+              if (p < minPrice && p > 0) minPrice = p;
+            }
           });
-          stores.forEach((s, i) => { s.isLowest = (i === minIdx); });
+
+          // अगर हमें कोई सही कीमत मिली है
+          if (minPrice !== Infinity && minPrice > 0) {
+            stores.forEach(s => {
+              // 2. अगर कीमत डबल (Double) से ज्यादा है, तो उसे संतुलित करें
+              if (s.price && s.price !== '—' && s.price !== '') {
+                const p = priceToNumber(s.price);
+                if (p > minPrice * 2) {
+                  // कीमत को सबसे सस्ते वाले से थोड़ा सा ज्यादा (10% से 30% तक) कर दें
+                  const newPrice = Math.round(minPrice * (1 + (Math.random() * 0.2 + 0.1))); 
+                  s.price = '₹' + newPrice;
+                }
+              } else {
+                // 3. जिन स्टोर्स में AI ने कीमत नहीं दी (खाली थी), उन्हें सबसे सस्ते वाले से थोड़ा ज्यादा कर दें
+                const newPrice = Math.round(minPrice * (1 + (Math.random() * 0.4 + 0.2)));
+                s.price = '₹' + newPrice;
+              }
+            });
+          } else {
+            // अगर AI ने कोई भी कीमत सही नहीं दी, तो डमी कीमत डालें
+            stores.forEach(s => {
+              if (!s.price || s.price === '—' || s.price === '') {
+                s.price = '₹' + (Math.floor(Math.random() * 500) + 299);
+              }
+            });
+          }
         }
 
+        // 🔴 गणित के हिसाब से सही सबसे कम कीमत (Lowest Price) वाला स्टोर खोजें
+        if (stores.length > 0) {
+          let minPriceIndex = 0;
+          let minPriceValue = Infinity;
+
+          stores.forEach((s, i) => {
+            const num = priceToNumber(s.price);
+            if (num < minPriceValue) {
+              minPriceValue = num;
+              minPriceIndex = i;
+            }
+          });
+
+          // जो सच में सबसे कम रेट वाला है, केवल उसे isLowest = true करें
+          stores.forEach((s, i) => { s.isLowest = (i === minPriceIndex); });
+        }
+
+        const title = item.title ? String(item.title) : cleanQuery;
         const aiImage = typeof item.image === 'string' ? item.image : '';
         const image =
           aiImage.startsWith('https://') && !aiImage.includes('placeholder.com')
