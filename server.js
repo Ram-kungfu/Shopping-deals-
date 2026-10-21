@@ -305,7 +305,12 @@ app.post('/api/search', async (req, res) => {
 
             // रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक)
             const increase = Math.floor(Math.random() * (basePrice * 0.5)) + 50;
-            const highPrice = basePrice + increase;
+            let highPrice = basePrice + increase;
+
+            // 🔧 बदलाव: दूसरा (ऊँचा) भाव अब ₹3,000 से ₹5,000 के बीच आएगा
+            // (जहाँ पहला भाव पहले से इससे ऊपर है, वहाँ पुराना हिसाब ही रहेगा)
+            const bigHigh = 3000 + Math.floor(Math.random() * 2001);
+            if (bigHigh > basePrice) highPrice = bigHigh;
 
             tempStores.push({
               name: storeConfig.name,
