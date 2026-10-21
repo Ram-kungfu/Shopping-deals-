@@ -90,41 +90,42 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन
+// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (मैक्सिमम बढ़ाया गया)
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
 
   if (category === 'retail') {
-    if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 25000; }
-    else if (t.includes('laptop')) { min = 30000; max = 70000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 200; max = 1500; }
-    else { min = 200; max = 3000; }
+    if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 35000; }
+    else if (t.includes('laptop')) { min = 30000; max = 90000; }
+    // रिटेल में कपड़े ₹250 से ₹3000
+    else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 250; max = 3000; }
+    else { min = 250; max = 5000; }
   } 
   else if (category === 'wholesale') {
     if (t.includes('mobile')) { min = 8000; max = 15000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 600; }
-    else { min = 150; max = 1500; }
+    else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 800; }
+    else { min = 150; max = 2000; }
   } 
   else if (category === 'reselling') {
-    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 100; max = 500; }
-    else { min = 100; max = 800; }
+    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 150; max = 600; }
+    else { min = 100; max = 1000; }
   } 
   else if (category === 'grocery') {
     if (t.includes('kurti') || t.includes('shirt')) { min = 150; max = 700; } 
-    else { min = 50; max = 300; }
+    else { min = 50; max = 400; }
   } 
   else if (category === 'commercial') {
-    if (t.includes('bulk') || t.includes('pack')) { min = 5000; max = 15000; }
-    else if (t.includes('drill') || t.includes('machine')) { min = 1500; max = 5000; }
-    else { min = 500; max = 5000; }
+    if (t.includes('bulk') || t.includes('pack')) { min = 5000; max = 20000; }
+    else if (t.includes('drill') || t.includes('machine')) { min = 1500; max = 8000; }
+    else { min = 500; max = 10000; }
   } 
   else if (category === 'global') {
-    if (t.includes('bulk') || t.includes('wholesale') || t.includes('export')) { min = 20000; max = 60000; }
-    else { min = 500; max = 5000; }
+    if (t.includes('bulk') || t.includes('wholesale') || t.includes('export')) { min = 20000; max = 80000; }
+    else { min = 500; max = 10000; }
   } 
   else {
-    min = 200; max = 3000;
+    min = 250; max = 3000;
   }
 
   return { min, max };
@@ -133,19 +134,24 @@ function getCategoryBasePrice(category, title) {
 // 🔴 स्टोर के हिसाब से कीमत बढ़ाने का फंक्शन (Smart Store Weightage)
 function getStorePriceMultiplier(storeKey) {
   const key = String(storeKey).toLowerCase();
+  
+  // रीसेलिंग साइट्स (सबसे सस्ता)
   if (key === 'meesho' || key === 'udaan' || key === 'glowroad' || key === 'shop101' || key === 'navo') {
-    return 1.0; // सबसे सस्ता
+    return 1.0; 
   }
-  if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues') {
-    return 1.15; // थोड़ा महंगा
+  // सामान्य साइट्स
+  if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues' || key === 'tatacliq') {
+    return 1.15; 
   }
-  if (key === 'myntra' || key === 'ajio' || key === 'tatacliq') {
-    return 1.25; // और थोड़ा महंगा
+  // फैशन साइट्स (थोड़ा महंगा)
+  if (key === 'myntra' || key === 'ajio') {
+    return 1.30; 
   }
+  // बड़ी साइट (सबसे महंगा)
   if (key === 'amazon' || key === 'amazonbusiness') {
-    return 1.35; // सबसे महंगा
+    return 1.45; 
   }
-  return 1.1;
+  return 1.15;
 }
 
 // ==================== GEMINI ====================
@@ -270,7 +276,7 @@ app.post('/api/search', async (req, res) => {
       .map(item => {
         let stores = [];
         
-        // 🔴 सभी 8 स्टोर्स को जोड़ें (AI से मिले स्टोर्स को नज़रअंदाज़ करें)
+        // सभी स्टोर्स जोड़ें
         const categoryStoresMap = {
           retail: ['meesho', 'flipkart', 'jiomart', 'shopclues', 'myntra', 'ajio', 'tatacliq', 'amazon'],
           wholesale: ['udaan', 'indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
@@ -290,15 +296,15 @@ app.post('/api/search', async (req, res) => {
         requiredStores.forEach((key) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
-            // बेस प्राइस (₹200-₹300 के आस-पास)
-            let basePrice = min + Math.floor(Math.random() * 50); 
+            // बेस प्राइस (min के आस-पास)
+            let basePrice = min + Math.floor(Math.random() * (max * 0.1)); 
             
             // स्टोर के हिसाब से कीमत बढ़ाएं (Smart Weightage)
             const multiplier = getStorePriceMultiplier(key);
             basePrice = Math.floor(basePrice * multiplier);
 
-            // रेंज बनाएं (बेस प्राइस से लेकर 1.3 गुना तक)
-            const increase = Math.floor(Math.random() * (basePrice * 0.3)) + 20;
+            // रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक)
+            const increase = Math.floor(Math.random() * (basePrice * 0.5)) + 50;
             const highPrice = basePrice + increase;
 
             tempStores.push({
@@ -327,7 +333,7 @@ app.post('/api/search', async (req, res) => {
           tempStores[minPriceIndex].isLowest = true;
         }
 
-        // baseNum हटा दें ताकि फ्रंटएंड पर न जाए
+        // baseNum हटा दें
         stores = tempStores.map(({ baseNum, ...rest }) => rest);
 
         return {
