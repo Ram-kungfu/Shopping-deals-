@@ -101,8 +101,8 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// ==================== SERPER API (REAL PRICE EXTRACTION) ====================
-async function getRealPriceFromSerper(query, storeName) {
+// ==================== SERPER API (REAL PRICE & LINK EXTRACTION) ====================
+async function getRealDataFromSerper(query, storeName, storeConfig) {
   const SERPER_KEY = process.env.SERPER_API_KEY;
   if (!SERPER_KEY) return null;
 
@@ -117,7 +117,7 @@ async function getRealPriceFromSerper(query, storeName) {
         q: `${query} price site:${storeName.toLowerCase().replace(/\s+/g, '')}.com`,
         gl: 'in',
         hl: 'en',
-        num: 3
+        num: 1
       })
     });
 
@@ -126,15 +126,26 @@ async function getRealPriceFromSerper(query, storeName) {
     const data = await response.json();
     const organic = data.organic || [];
     
-    // रिजल्ट के टेक्स्ट में से कीमत (₹) निकालने की कोशिश करें
-    for (let item of organic) {
+    if (organic.length > 0) {
+      const item = organic[0];
+      let realPrice = null;
+      let directLink = item.link; // सीधे प्रोडक्ट का लिंक
+
+      // कीमत निकालने की कोशिश करें
       const textToSearch = (item.title || '') + ' ' + (item.snippet || '');
       const match = textToSearch.match(/₹\s*([\d,]+)/);
       if (match && match[1]) {
-        return '₹' + match[1];
+        realPrice = '₹' + match[1];
       }
+
+      // अगर लिंक मिला है, तो उसमें Affiliate ID जोड़ें
+      if (directLink) {
+        directLink = withAffiliate(directLink, storeConfig);
+      }
+
+      return { price: realPrice, link: directLink };
     }
-    return null; // अगर कीमत नहीं मिली
+    return null;
   } catch (e) {
     console.error('Serper API Error:', e.message);
     return null;
@@ -154,7 +165,6 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
   console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
 }
 
-// 🔴 प्रॉम्प्ट को और सख्त कर दिया गया है
 function buildPrompt(query) {
   return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
 
@@ -364,7 +374,7 @@ app.post('/api/search', async (req, res) => {
             if (storeConfig) {
               stores.push({
                 name: storeConfig.name,
-                price: '', // बाद में भरेंगे
+                price: '', 
                 isLowest: false,
                 key: reqKey,
                 link: buildAffiliateLink(reqKey, cleanQuery, storeConfig.name),
@@ -384,22 +394,20 @@ app.post('/api/search', async (req, res) => {
       })
       .filter(item => item.stores.length > 0);
 
-    // 🔴 Serper API का उपयोग करके असली कीमत (Real Price) चेक करें
+    // 🔴 Serper API का उपयोग करके असली कीमत (Real Price) और सीधा लिंक (Direct Link) चेक करें
     if (process.env.SERPER_API_KEY) {
       for (let p of finalProducts) {
         for (let s of p.stores) {
-          const realPrice = await getRealPriceFromSerper(p.title, s.name);
-          if (realPrice) {
-            s.price = realPrice; // अगर Serper को कीमत मिली, तो उसे लगाएं
+          const realData = await getRealDataFromSerper(p.title, s.name, STORES[s.key]);
+          if (realData) {
+            if (realData.price) s.price = realData.price; // असली कीमत लगाएं
+            if (realData.link) s.link = realData.link; // सीधा प्रोडक्ट लिंक लगाएं
           } else if (!s.price || s.price === '—' || s.price === '') {
-            // अगर Serper को नहीं मिली और AI ने भी खाली छोड़ा है, तो डमी कीमत
             s.price = '₹' + (Math.floor(Math.random() * 500) + 299); 
           }
-          // अगर Serper को नहीं मिली लेकिन AI ने कीमत दी है, तो AI की कीमत ही रहने दें
         }
       }
     } else {
-       // अगर Serper API Key ही नहीं है, तो AI की कीमतों का उपयोग करें
        finalProducts.forEach(p => {
           p.stores.forEach(s => {
             if (!s.price || s.price === '—' || s.price === '') {
@@ -409,7 +417,6 @@ app.post('/api/search', async (req, res) => {
        });
     }
 
-    // अब Price Normalizer और Lowest Price लगाएं
     finalProducts = finalProducts.map(p => {
       if (p.stores.length > 0) {
         let minPrice = Infinity;
