@@ -114,7 +114,7 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
   console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
 }
 
-// 🔴 प्रॉम्प्ट को और सख्त कर दिया गया है
+// 🔴 प्रॉम्प्ट को और सख्त कर दिया गया है ताकि AI ज्यादा से ज्यादा स्टोर्स दे
 function buildPrompt(query) {
   return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
 
