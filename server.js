@@ -134,18 +134,18 @@ function getCategoryBasePrice(category, title) {
 function getStorePriceMultiplier(storeKey) {
   const key = String(storeKey).toLowerCase();
   if (key === 'meesho' || key === 'udaan' || key === 'glowroad' || key === 'shop101' || key === 'navo') {
-    return 1.0; // सबसे सस्ता (Meesho, Reselling sites)
+    return 1.0; // सबसे सस्ता
   }
   if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues') {
     return 1.15; // थोड़ा महंगा
   }
   if (key === 'myntra' || key === 'ajio' || key === 'tatacliq') {
-    return 1.25; // और थोड़ा महंगा (Fashion sites)
+    return 1.25; // और थोड़ा महंगा
   }
   if (key === 'amazon' || key === 'amazonbusiness') {
-    return 1.35; // सबसे महंगा (Brand value)
+    return 1.35; // सबसे महंगा
   }
-  return 1.1; // बाकी स्टोर्स के लिए
+  return 1.1;
 }
 
 // ==================== GEMINI ====================
@@ -268,11 +268,11 @@ app.post('/api/search', async (req, res) => {
     let finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
-        let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
+        let stores = [];
         
-        // सभी स्टोर्स जोड़ें
+        // 🔴 सभी 8 स्टोर्स को जोड़ें (AI से मिले स्टोर्स को नज़रअंदाज़ करें)
         const categoryStoresMap = {
-          retail: ['meesho', 'flipkart', 'myntra', 'ajio', 'jiomart', 'shopclues', 'tatacliq', 'amazon'],
+          retail: ['meesho', 'flipkart', 'jiomart', 'shopclues', 'myntra', 'ajio', 'tatacliq', 'amazon'],
           wholesale: ['udaan', 'indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
           reselling: ['meesho', 'navo', 'glowroad', 'shop101'],
           grocery: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
@@ -280,24 +280,14 @@ app.post('/api/search', async (req, res) => {
           global: ['alibaba']
         };
 
-        const requiredStores = categoryStoresMap[item.category] || [];
-        
-        let finalStoreKeys = [...storeKeys];
-        requiredStores.forEach(reqKey => {
-          if (!finalStoreKeys.includes(reqKey)) {
-            finalStoreKeys.push(reqKey);
-          }
-        });
-
-        let stores = [];
+        const requiredStores = categoryStoresMap[item.category] || ['meesho', 'flipkart', 'amazon'];
 
         // कैटेगरी के हिसाब से मिनिमम और मैक्सिमम प्राइस तय करें
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
-        // पहले सभी स्टोर्स के लिए रेट कैलकुलेट करें
         let tempStores = [];
 
-        finalStoreKeys.forEach((key) => {
+        requiredStores.forEach((key) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
             // बेस प्राइस (₹200-₹300 के आस-पास)
