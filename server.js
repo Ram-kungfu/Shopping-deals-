@@ -90,56 +90,16 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी और आइटम के हिसाब से कीमत तय करने वाला फंक्शन (Smart Keyword Matching)
-function getCategoryBasePrice(category, title) {
+// 🔴 फॉलबैक रेंज (अगर AI नहीं देता तो यह काम आएगा)
+function getFallbackPriceRange(category, title) {
   const t = String(title).toLowerCase();
-  let min, max;
-
-  // ----- RETAIL -----
-  if (category === 'retail') {
-    if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 35000; }
-    else if (t.includes('laptop')) { min = 30000; max = 90000; }
-    else if (t.includes('computer') || t.includes('pc') || t.includes('desktop')) { min = 15000; max = 60000; }
-    else if (t.includes('tv') || t.includes('television')) { min = 10000; max = 50000; }
-    else if (t.includes('fridge') || t.includes('refrigerator')) { min = 8000; max = 40000; }
-    else if (t.includes('ac') || t.includes('air conditioner')) { min = 20000; max = 60000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 250; max = 3000; }
-    else if (t.includes('shoe') || t.includes('sneaker')) { min = 500; max = 5000; }
-    else { min = 250; max = 5000; }
-  } 
-  // ----- WHOLESALE -----
-  else if (category === 'wholesale') {
-    if (t.includes('mobile')) { min = 8000; max = 15000; }
-    else if (t.includes('computer') || t.includes('laptop')) { min = 12000; max = 45000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 800; }
-    else { min = 150; max = 2000; }
-  } 
-  // ----- RESELLING -----
-  else if (category === 'reselling') {
-    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 150; max = 600; }
-    else { min = 100; max = 1000; }
-  } 
-  // ----- GROCERY -----
-  else if (category === 'grocery') {
-    if (t.includes('kurti') || t.includes('shirt')) { min = 150; max = 700; } 
-    else { min = 50; max = 400; }
-  } 
-  // ----- COMMERCIAL -----
-  else if (category === 'commercial') {
-    if (t.includes('bulk') || t.includes('pack')) { min = 5000; max = 20000; }
-    else if (t.includes('drill') || t.includes('machine')) { min = 1500; max = 8000; }
-    else { min = 500; max = 10000; }
-  } 
-  // ----- GLOBAL -----
-  else if (category === 'global') {
-    if (t.includes('bulk') || t.includes('wholesale') || t.includes('export')) { min = 20000; max = 80000; }
-    else { min = 500; max = 10000; }
-  } 
-  else {
-    min = 250; max = 3000;
-  }
-
-  return { min, max };
+  if (category === 'retail') return { min: 500, max: 5000 };
+  if (category === 'wholesale') return { min: 200, max: 2000 };
+  if (category === 'reselling') return { min: 150, max: 800 };
+  if (category === 'grocery') return { min: 50, max: 500 };
+  if (category === 'commercial') return { min: 1000, max: 10000 };
+  if (category === 'global') return { min: 500, max: 5000 };
+  return { min: 250, max: 3000 };
 }
 
 // 🔴 स्टोर के हिसाब से कीमत बढ़ाने का फंक्शन (Smart Store Weightage)
@@ -178,6 +138,7 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
   console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
 }
 
+// 🔴 AI से सिर्फ टाइटल नहीं, बल्कि उसकी असली रेंज (Min और Max) भी मांगेंगे
 function buildPrompt(query) {
   return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
 
@@ -193,12 +154,17 @@ One product MUST belong to each of these 6 categories:
 5. "commercial"
 6. "global"
 
+For EACH product, you MUST also provide a realistic price range (in Indian Rupees) based on what the product actually costs in the real world. 
+For example: a smartphone should be around ₹10,000-₹30,000, a shirt should be around ₹300-₹1500, a laptop should be around ₹30,000-₹80,000.
+
 STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fences, no explanations):
 
 [
   {
     "category": "retail",
     "title": "Exact Product Full Name",
+    "minPrice": 10000,
+    "maxPrice": 30000,
     "image": "",
     "badgeText": "Retail / Consumer",
     "storeKeys": ["amazon", "flipkart", "myntra", "ajio"]
@@ -207,18 +173,19 @@ STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fenc
 
 IMPORTANT RULES:
 1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
-2. Do NOT include "price" or "stores" array — we will generate them on the server side.
-3. Leave "image" as an empty string.`;
+2. "minPrice" and "maxPrice" MUST be realistic Indian Rupee values (₹) without the rupee symbol (just numbers).
+3. Do NOT include "price" or "stores" array — we will generate them on the server side.
+4. Leave "image" as an empty string.`;
 }
 
 function getFallbackResults(query) {
   return [
-    { category: 'retail', title: `${query}`, badgeText: 'Retail / Consumer', storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'] },
-    { category: 'wholesale', title: `Bulk ${query}`, badgeText: 'Wholesale / B2B', storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'] },
-    { category: 'reselling', title: `${query} for Resellers`, badgeText: 'Reselling & Social', storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'] },
-    { category: 'grocery', title: `${query} (Quick)`, badgeText: 'Grocery & Quick', storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'] },
-    { category: 'commercial', title: `Bulk Order ${query}`, badgeText: 'Commercial / Industrial', storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'] },
-    { category: 'global', title: `Export Quality ${query}`, badgeText: 'Global / Import', storeKeys: ['alibaba'] }
+    { category: 'retail', title: `${query}`, minPrice: 500, maxPrice: 5000, badgeText: 'Retail / Consumer', storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'] },
+    { category: 'wholesale', title: `Bulk ${query}`, minPrice: 200, maxPrice: 2000, badgeText: 'Wholesale / B2B', storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'] },
+    { category: 'reselling', title: `${query} for Resellers`, minPrice: 150, maxPrice: 800, badgeText: 'Reselling & Social', storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'] },
+    { category: 'grocery', title: `${query} (Quick)`, minPrice: 50, maxPrice: 500, badgeText: 'Grocery & Quick', storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'] },
+    { category: 'commercial', title: `Bulk Order ${query}`, minPrice: 1000, maxPrice: 10000, badgeText: 'Commercial / Industrial', storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'] },
+    { category: 'global', title: `Export Quality ${query}`, minPrice: 500, maxPrice: 5000, badgeText: 'Global / Import', storeKeys: ['alibaba'] }
   ];
 }
 
@@ -299,8 +266,12 @@ app.post('/api/search', async (req, res) => {
 
         const requiredStores = categoryStoresMap[item.category] || ['meesho', 'flipkart', 'amazon'];
 
-        // कैटेगरी और आइटम के हिसाब से मिनिमम और मैक्सिमम प्राइस तय करें
-        const { min, max } = getCategoryBasePrice(item.category, item.title);
+        // 🔴 AI की दी हुई रेंज का उपयोग करें (अगर AI ने नहीं दी, तो फॉलबैक का उपयोग करें)
+        let min = Number(item.minPrice) || getFallbackPriceRange(item.category, item.title).min;
+        let max = Number(item.maxPrice) || getFallbackPriceRange(item.category, item.title).max;
+
+        // सुनिश्चित करें कि max, min से कम न हो
+        if (max < min) max = min * 2;
 
         let tempStores = [];
 
@@ -315,7 +286,7 @@ app.post('/api/search', async (req, res) => {
             basePrice = Math.floor(basePrice * multiplier);
 
             // रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक)
-            const increase = Math.floor(Math.random() * (basePrice * 0.5)) + 50;
+            const increase = Math.floor(Math.random() * (basePrice * 0.5)) + Math.floor(basePrice * 0.1);
             const highPrice = basePrice + increase;
 
             tempStores.push({
