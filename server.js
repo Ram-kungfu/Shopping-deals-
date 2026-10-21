@@ -90,36 +90,47 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (मैक्सिमम बढ़ाया गया)
+// 🔴 कैटेगरी और आइटम के हिसाब से कीमत तय करने वाला फंक्शन (Smart Keyword Matching)
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
 
+  // ----- RETAIL -----
   if (category === 'retail') {
     if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 35000; }
     else if (t.includes('laptop')) { min = 30000; max = 90000; }
-    // रिटेल में कपड़े ₹250 से ₹3000
+    else if (t.includes('computer') || t.includes('pc') || t.includes('desktop')) { min = 15000; max = 60000; }
+    else if (t.includes('tv') || t.includes('television')) { min = 10000; max = 50000; }
+    else if (t.includes('fridge') || t.includes('refrigerator')) { min = 8000; max = 40000; }
+    else if (t.includes('ac') || t.includes('air conditioner')) { min = 20000; max = 60000; }
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 250; max = 3000; }
+    else if (t.includes('shoe') || t.includes('sneaker')) { min = 500; max = 5000; }
     else { min = 250; max = 5000; }
   } 
+  // ----- WHOLESALE -----
   else if (category === 'wholesale') {
     if (t.includes('mobile')) { min = 8000; max = 15000; }
+    else if (t.includes('computer') || t.includes('laptop')) { min = 12000; max = 45000; }
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 800; }
     else { min = 150; max = 2000; }
   } 
+  // ----- RESELLING -----
   else if (category === 'reselling') {
     if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 150; max = 600; }
     else { min = 100; max = 1000; }
   } 
+  // ----- GROCERY -----
   else if (category === 'grocery') {
     if (t.includes('kurti') || t.includes('shirt')) { min = 150; max = 700; } 
     else { min = 50; max = 400; }
   } 
+  // ----- COMMERCIAL -----
   else if (category === 'commercial') {
     if (t.includes('bulk') || t.includes('pack')) { min = 5000; max = 20000; }
     else if (t.includes('drill') || t.includes('machine')) { min = 1500; max = 8000; }
     else { min = 500; max = 10000; }
   } 
+  // ----- GLOBAL -----
   else if (category === 'global') {
     if (t.includes('bulk') || t.includes('wholesale') || t.includes('export')) { min = 20000; max = 80000; }
     else { min = 500; max = 10000; }
@@ -288,7 +299,7 @@ app.post('/api/search', async (req, res) => {
 
         const requiredStores = categoryStoresMap[item.category] || ['meesho', 'flipkart', 'amazon'];
 
-        // कैटेगरी के हिसाब से मिनिमम और मैक्सिमम प्राइस तय करें
+        // कैटेगरी और आइटम के हिसाब से मिनिमम और मैक्सिमम प्राइस तय करें
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
         let tempStores = [];
@@ -305,12 +316,7 @@ app.post('/api/search', async (req, res) => {
 
             // रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक)
             const increase = Math.floor(Math.random() * (basePrice * 0.5)) + 50;
-            let highPrice = basePrice + increase;
-
-            // 🔧 बदलाव: दूसरा (ऊँचा) भाव अब ₹3,000 से ₹5,000 के बीच आएगा
-            // (जहाँ पहला भाव पहले से इससे ऊपर है, वहाँ पुराना हिसाब ही रहेगा)
-            const bigHigh = 3000 + Math.floor(Math.random() * 2001);
-            if (bigHigh > basePrice) highPrice = bigHigh;
+            const highPrice = basePrice + increase;
 
             tempStores.push({
               name: storeConfig.name,
