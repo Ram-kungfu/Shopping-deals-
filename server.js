@@ -85,52 +85,216 @@ function placeholderImage(text) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-function priceToNumber(price) {
-  const n = parseInt(String(price).replace(/[^\d]/g, ''), 10);
-  return Number.isNaN(n) ? Infinity : n;
+// ==================== 🔴 SMART AUTO-PRICE DATABASE ====================
+// 200+ keywords के साथ। जो भी item search करें, यह उसकी realistic range देगा।
+const PRICE_DATABASE = [
+  // ---- Electronics ----
+  { kw: ['iphone', 'apple phone'], min: 45000, max: 150000 },
+  { kw: ['samsung galaxy', 'samsung mobile', 'samsung phone'], min: 12000, max: 90000 },
+  { kw: ['oneplus', 'one plus'], min: 20000, max: 60000 },
+  { kw: ['redmi', 'xiaomi', 'mi phone'], min: 7000, max: 35000 },
+  { kw: ['realme', 'oppo', 'vivo', 'poco'], min: 8000, max: 40000 },
+  { kw: ['mobile', 'smartphone', 'phone', '5g phone'], min: 10000, max: 35000 },
+  { kw: ['laptop', 'notebook', 'macbook'], min: 30000, max: 80000 },
+  { kw: ['gaming laptop'], min: 55000, max: 150000 },
+  { kw: ['computer', 'desktop', 'pc'], min: 18000, max: 60000 },
+  { kw: ['tablet', 'ipad'], min: 10000, max: 45000 },
+  { kw: ['tv', 'television', 'smart tv', 'led tv'], min: 10000, max: 50000 },
+  { kw: ['fridge', 'refrigerator'], min: 8000, max: 40000 },
+  { kw: ['washing machine'], min: 12000, max: 35000 },
+  { kw: ['ac', 'air conditioner'], min: 20000, max: 55000 },
+  { kw: ['microwave', 'oven'], min: 4000, max: 20000 },
+  { kw: ['headphone', 'earphone', 'earbuds', 'airpods', 'headset'], min: 300, max: 8000 },
+  { kw: ['speaker', 'bluetooth speaker', 'soundbar'], min: 500, max: 15000 },
+  { kw: ['camera', 'dslr', 'gopro'], min: 8000, max: 80000 },
+  { kw: ['smartwatch', 'watch'], min: 500, max: 20000 },
+  { kw: ['printer', 'scanner'], min: 3000, max: 25000 },
+  { kw: ['router', 'wifi router'], min: 500, max: 5000 },
+  { kw: ['pendrive', 'hard disk', 'harddrive', 'ssd'], min: 300, max: 8000 },
+  { kw: ['power bank'], min: 500, max: 3000 },
+  { kw: ['keyboard', 'mouse'], min: 200, max: 3000 },
+  { kw: ['monitor'], min: 6000, max: 30000 },
+  
+  // ---- Fashion ----
+  { kw: ['shirt'], min: 250, max: 1500 },
+  { kw: ['tshirt', 't-shirt'], min: 200, max: 1200 },
+  { kw: ['jeans', 'denim'], min: 400, max: 2500 },
+  { kw: ['pant', 'trouser'], min: 350, max: 2000 },
+  { kw: ['kurti', 'kurta', 'saree'], min: 300, max: 3000 },
+  { kw: ['dress', 'frock', 'gown'], min: 400, max: 4000 },
+  { kw: ['suit', 'blazer'], min: 1500, max: 10000 },
+  { kw: ['shoe', 'sneaker', 'footwear'], min: 500, max: 6000 },
+  { kw: ['sandal', 'chappal', 'slipper'], min: 150, max: 1500 },
+  { kw: ['bag', 'backpack', 'handbag'], min: 400, max: 5000 },
+  { kw: ['watch', 'wrist watch'], min: 300, max: 5000 },
+  { kw: ['sunglasses', 'goggles'], min: 200, max: 3000 },
+  
+  // ---- Daily Use / Small Items ----
+  { kw: ['pen', 'ball pen', 'gel pen'], min: 5, max: 100 },
+  { kw: ['pencil'], min: 3, max: 50 },
+  { kw: ['notebook', 'copy', 'register'], min: 20, max: 300 },
+  { kw: ['needle', 'sui', 'sui dhaaga'], min: 5, max: 150 },
+  { kw: ['soap'], min: 20, max: 250 },
+  { kw: ['shampoo'], min: 80, max: 800 },
+  { kw: ['toothpaste'], min: 30, max: 350 },
+  { kw: ['brush', 'toothbrush'], min: 20, max: 250 },
+  { kw: ['comb'], min: 15, max: 150 },
+  { kw: ['towel'], min: 100, max: 800 },
+  { kw: ['bedsheet'], min: 300, max: 2000 },
+  { kw: ['pillow'], min: 200, max: 1500 },
+  { kw: ['bottle', 'water bottle'], min: 100, max: 1500 },
+  { kw: ['tiffin', 'lunch box'], min: 150, max: 1200 },
+  { kw: ['umbrella'], min: 200, max: 1500 },
+  
+  // ---- Grocery ----
+  { kw: ['rice', 'chawal'], min: 40, max: 200 },
+  { kw: ['atta', 'flour'], min: 30, max: 150 },
+  { kw: ['dal', 'pulse'], min: 60, max: 250 },
+  { kw: ['oil', 'cooking oil'], min: 100, max: 500 },
+  { kw: ['sugar', 'cheeni'], min: 40, max: 100 },
+  { kw: ['tea', 'chai', 'coffee'], min: 100, max: 800 },
+  { kw: ['milk', 'doodh'], min: 25, max: 100 },
+  { kw: ['biscuit', 'chocolate'], min: 10, max: 200 },
+  { kw: ['namkeen', 'chips'], min: 20, max: 200 },
+  { kw: ['masala', 'spice'], min: 30, max: 400 },
+  
+  // ---- Kitchen & Home ----
+  { kw: ['mixer', 'grinder', 'blender'], min: 1500, max: 8000 },
+  { kw: ['cooker', 'pressure cooker'], min: 800, max: 4000 },
+  { kw: ['pan', 'kadhai', 'tawa'], min: 300, max: 2500 },
+  { kw: ['plate', 'bowl', 'glass'], min: 50, max: 800 },
+  { kw: ['fan', 'ceiling fan'], min: 1200, max: 5000 },
+  { kw: ['bulb', 'led bulb'], min: 80, max: 800 },
+  { kw: ['chair', 'table', 'furniture'], min: 1000, max: 15000 },
+  { kw: ['sofa'], min: 10000, max: 80000 },
+  { kw: ['mattress'], min: 3000, max: 25000 },
+  
+  // ---- Toys & Kids ----
+  { kw: ['toy', 'toys', 'remote car'], min: 100, max: 3000 },
+  { kw: ['doll', 'teddy bear'], min: 150, max: 1500 },
+  { kw: ['puzzle', 'board game'], min: 100, max: 2000 },
+  { kw: ['cycle', 'bicycle'], min: 3000, max: 20000 },
+  
+  // ---- Sports & Health ----
+  { kw: ['cricket bat', 'bat'], min: 500, max: 5000 },
+  { kw: ['football', 'volleyball'], min: 300, max: 2000 },
+  { kw: ['yoga mat'], min: 200, max: 1500 },
+  { kw: ['dumbbell', 'gym equipment'], min: 500, max: 8000 },
+  { kw: ['protein', 'supplement'], min: 800, max: 5000 },
+  
+  // ---- Beauty & Personal Care ----
+  { kw: ['cream', 'face cream'], min: 100, max: 1500 },
+  { kw: ['lipstick'], min: 150, max: 2000 },
+  { kw: ['perfume', 'deodorant'], min: 200, max: 5000 },
+  { kw: ['trimmer', 'shaver'], min: 500, max: 4000 },
+  { kw: ['hair dryer'], min: 500, max: 3000 },
+  
+  // ---- Tools & Hardware ----
+  { kw: ['hammer', 'screwdriver', 'tool'], min: 100, max: 1500 },
+  { kw: ['drill', 'drill machine'], min: 1500, max: 12000 },
+  { kw: ['paint', 'paint bucket'], min: 200, max: 3000 },
+  { kw: ['wire', 'cable'], min: 100, max: 2000 },
+  
+  // ---- Stationery & Office ----
+  { kw: ['stapler', 'punching machine'], min: 50, max: 500 },
+  { kw: ['file', 'folder'], min: 20, max: 300 },
+  { kw: ['calculator'], min: 100, max: 1500 },
+  { kw: ['whiteboard', 'board'], min: 500, max: 5000 },
+  
+  // ---- Books ----
+  { kw: ['book', 'novel', 'textbook'], min: 100, max: 1500 },
+  { kw: ['comic', 'magazine'], min: 50, max: 800 },
+  
+  // ---- Baby Products ----
+  { kw: ['diaper', 'pampers'], min: 200, max: 1500 },
+  { kw: ['baby food'], min: 200, max: 800 },
+  { kw: ['stroller', 'pram'], min: 2000, max: 15000 },
+  
+  // ---- Furniture / Big Items ----
+  { kw: ['almari', 'wardrobe'], min: 5000, max: 40000 },
+  { kw: ['bed'], min: 5000, max: 40000 },
+  { kw: ['dining table'], min: 5000, max: 35000 },
+  
+  // ---- Vehicles (basic) ----
+  { kw: ['bike', 'motorcycle', 'scooter'], min: 50000, max: 250000 },
+  { kw: ['car'], min: 300000, max: 1500000 },
+  { kw: ['car tyre', 'tyre'], min: 1500, max: 12000 },
+];
+
+// 🔍 Auto-detect realistic price range from keyword
+function detectPriceRangeByKeyword(title) {
+  const t = String(title).toLowerCase().trim();
+  
+  // सबसे पहले longest keyword match करें (specific से general)
+  let bestMatch = null;
+  let bestLen = 0;
+  
+  for (const entry of PRICE_DATABASE) {
+    for (const kw of entry.kw) {
+      // Word boundary check to avoid "pen" matching "pendrive"
+      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i');
+      if (regex.test(t)) {
+        if (kw.length > bestLen) {
+          bestLen = kw.length;
+          bestMatch = entry;
+        }
+      }
+    }
+  }
+  
+  if (bestMatch) {
+    return { min: bestMatch.min, max: bestMatch.max };
+  }
+  
+  return null;
 }
 
-// 🔴 स्मार्ट कीवर्ड रेंज (अगर AI से कीमत न मिले, तो यह काम आएगा)
-function getFallbackPriceRange(category, title) {
-  const t = String(title).toLowerCase();
-  
-  if (category === 'retail') {
-    if (t.includes('mobile') || t.includes('phone') || t.includes('5g') || t.includes('samsung') || t.includes('iphone')) return { min: 10000, max: 35000 };
-    if (t.includes('laptop')) return { min: 30000, max: 80000 };
-    if (t.includes('computer') || t.includes('pc') || t.includes('desktop')) return { min: 15000, max: 60000 };
-    if (t.includes('tv') || t.includes('television')) return { min: 10000, max: 50000 };
-    if (t.includes('fridge') || t.includes('refrigerator')) return { min: 8000, max: 40000 };
-    if (t.includes('ac') || t.includes('air conditioner')) return { min: 20000, max: 60000 };
-    if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) return { min: 250, max: 3000 };
-    if (t.includes('shoe') || t.includes('sneaker')) return { min: 500, max: 5000 };
-    return { min: 500, max: 5000 };
-  } 
-  if (category === 'wholesale') return { min: 200, max: 2000 };
-  if (category === 'reselling') return { min: 150, max: 800 };
-  if (category === 'grocery') return { min: 50, max: 500 };
-  if (category === 'commercial') return { min: 1000, max: 10000 };
-  if (category === 'global') return { min: 500, max: 5000 };
-  
-  return { min: 250, max: 3000 };
+// Category-aware fallback (जब keyword भी match न हो)
+function getFallbackPriceRange(category) {
+  switch (String(category).toLowerCase()) {
+    case 'retail':      return { min: 500,   max: 5000 };
+    case 'wholesale':   return { min: 200,   max: 2000 };
+    case 'reselling':   return { min: 150,   max: 800 };
+    case 'grocery':     return { min: 50,    max: 500 };
+    case 'commercial':  return { min: 1000,  max: 10000 };
+    case 'global':      return { min: 500,   max: 5000 };
+    default:            return { min: 250,   max: 3000 };
+  }
 }
 
-// 🔴 स्टोर के हिसाब से कीमत बढ़ाने का फंक्शन (Smart Store Weightage)
+// Category के हिसाब से price range को adjust करें
+// (Wholesale = 30% कम, Retail = as-is, Commercial = 5x, etc.)
+function adjustRangeForCategory(baseRange, category) {
+  const { min, max } = baseRange;
+  switch (String(category).toLowerCase()) {
+    case 'retail':      return { min: Math.round(min),               max: Math.round(max) };
+    case 'wholesale':   return { min: Math.round(min * 0.55),        max: Math.round(max * 0.7) };
+    case 'reselling':   return { min: Math.round(min * 0.45),        max: Math.round(max * 0.6) };
+    case 'grocery':     return { min: Math.round(Math.max(10, min * 0.3)), max: Math.round(max * 0.4) };
+    case 'commercial':  return { min: Math.round(min * 1.2),         max: Math.round(max * 2.5) };
+    case 'global':      return { min: Math.round(min * 1.5),         max: Math.round(max * 3) };
+    default:            return { min, max };
+  }
+}
+
+// Store के हिसाब से price multiplier (realistic market behaviour)
 function getStorePriceMultiplier(storeKey) {
   const key = String(storeKey).toLowerCase();
-  
-  if (key === 'meesho' || key === 'udaan' || key === 'glowroad' || key === 'shop101' || key === 'navo') {
-    return 1.0; 
-  }
-  if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues' || key === 'tatacliq') {
-    return 1.15; 
-  }
-  if (key === 'myntra' || key === 'ajio') {
-    return 1.30; 
-  }
-  if (key === 'amazon' || key === 'amazonbusiness') {
-    return 1.45; 
-  }
-  return 1.15;
+  if (['meesho', 'udaan', 'glowroad', 'shop101', 'navo'].includes(key)) return 0.95;
+  if (['flipkart', 'jiomart', 'shopclues', 'tatacliq'].includes(key)) return 1.10;
+  if (['myntra', 'ajio'].includes(key)) return 1.25;
+  if (['amazon', 'amazonbusiness'].includes(key)) return 1.40;
+  if (['blinkit', 'zepto', 'instamart', 'bigbasket'].includes(key)) return 1.08;
+  if (['indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'].includes(key)) return 0.85;
+  if (['moglix', 'industrybuying'].includes(key)) return 1.15;
+  if (['alibaba'].includes(key)) return 0.70;
+  return 1.10;
+}
+
+// Price को nice format में दिखाएं (₹1,234 - ₹2,567)
+function formatPrice(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
 }
 
 // ==================== GEMINI ====================
@@ -143,57 +307,56 @@ if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
     console.error('Gemini init failed:', e.message);
   }
 } else {
-  console.warn('⚠️  GEMINI_API_KEY not set — fallback results will be used.');
+  console.warn('⚠️  GEMINI_API_KEY not set — using smart keyword fallback.');
 }
 
-// 🔴 AI से सिर्फ टाइटल नहीं, बल्कि उसकी असली रेंज (Min और Max) भी मांगेंगे
 function buildPrompt(query) {
-  return `You are an expert e-commerce, wholesale, B2B, quick-commerce, and reselling price comparison engine for India.
+  return `You are an expert Indian e-commerce price estimation AI.
 
-The user is searching for: "${query}".
+User search query: "${query}"
 
-YOUR STRICT TASK:
-You MUST generate an array containing AT LEAST 6 distinct product objects. 
-One product MUST belong to each of these 6 categories:
-1. "retail"
-2. "wholesale"
-3. "reselling"
-4. "grocery"
-5. "commercial"
-6. "global"
+TASK:
+Generate a JSON array of AT LEAST 6 product objects, one for each category:
+"retail", "wholesale", "reselling", "grocery", "commercial", "global"
 
-For EACH product, you MUST provide a realistic price range (in Indian Rupees) based on what the product actually costs in the real world. 
-For example: a smartphone should be around ₹10,000-₹30,000, a shirt should be around ₹300-₹1500, a laptop should be around ₹30,000-₹80,000.
+For EACH product you MUST estimate a REALISTIC minimum and maximum price in Indian Rupees (₹) based on what that item actually costs in India. 
+Think carefully about the actual product. Examples:
+- "pen" → retail ₹10-₹50, wholesale ₹3-₹20, grocery ₹5-₹30
+- "iphone 15" → retail ₹65000-₹85000, wholesale ₹60000-₹78000, global ₹55000-₹70000
+- "shirt" → retail ₹300-₹1500, wholesale ₹150-₹700, reselling ₹200-₹900
+- "laptop" → retail ₹30000-₹80000, commercial ₹35000-₹95000
+- "rice 1kg" → grocery ₹40-₹120
 
-STRICT OUTPUT FORMAT — Return ONLY a raw JSON array (no markdown, no code fences, no explanations):
+STRICT OUTPUT — return ONLY raw JSON array (no markdown, no code fences, no text before/after):
 
 [
   {
     "category": "retail",
-    "title": "Exact Product Full Name",
-    "minPrice": 10000,
-    "maxPrice": 30000,
-    "image": "",
+    "title": "Exact Full Product Name",
+    "minPrice": 100,
+    "maxPrice": 500,
     "badgeText": "Retail / Consumer",
-    "storeKeys": ["amazon", "flipkart", "myntra", "ajio"]
+    "storeKeys": ["amazon", "flipkart", "meesho"]
   }
 ]
 
-IMPORTANT RULES:
-1. "storeKeys" MUST be lowercase keys from this exact list: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
-2. "minPrice" and "maxPrice" MUST be realistic Indian Rupee values (₹) without the rupee symbol (just numbers).
-3. Do NOT include "price" or "stores" array — we will generate them on the server side.
-4. Leave "image" as an empty string.`;
+RULES:
+1. "minPrice" and "maxPrice" MUST be realistic numbers (₹, no symbol).
+2. minPrice MUST be less than maxPrice. Both MUST be > 0.
+3. "storeKeys" must use lowercase keys from: amazon, flipkart, meesho, myntra, ajio, tatacliq, jiomart, shopclues, blinkit, zepto, instamart, bigbasket, indiamart, udaan, tradeindia, flipkartwholesale, jumbotail, ninjacart, amazonbusiness, moglix, industrybuying, alibaba, glowroad, shop101, navo
+4. DO NOT include "price" or "stores" arrays — server generates them.
+5. Leave "image" as empty string.
+6. Each category MUST be present exactly once.`;
 }
 
 function getFallbackResults(query) {
   return [
-    { category: 'retail', title: `${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Retail / Consumer', storeKeys: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'] },
-    { category: 'wholesale', title: `Bulk ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Wholesale / B2B', storeKeys: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'] },
-    { category: 'reselling', title: `${query} for Resellers`, minPrice: 0, maxPrice: 0, badgeText: 'Reselling & Social', storeKeys: ['meesho', 'navo', 'glowroad', 'shop101'] },
-    { category: 'grocery', title: `${query} (Quick)`, minPrice: 0, maxPrice: 0, badgeText: 'Grocery & Quick', storeKeys: ['blinkit', 'zepto', 'instamart', 'bigbasket'] },
-    { category: 'commercial', title: `Bulk Order ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Commercial / Industrial', storeKeys: ['moglix', 'industrybuying', 'amazonbusiness'] },
-    { category: 'global', title: `Export Quality ${query}`, minPrice: 0, maxPrice: 0, badgeText: 'Global / Import', storeKeys: ['alibaba'] }
+    { category: 'retail',    title: `${query}`,                    badgeText: 'Retail / Consumer',       storeKeys: ['meesho','flipkart','jiomart','shopclues','myntra','ajio','tatacliq','amazon'] },
+    { category: 'wholesale', title: `Bulk ${query}`,               badgeText: 'Wholesale / B2B',         storeKeys: ['udaan','indiamart','tradeindia','flipkartwholesale','jumbotail','ninjacart'] },
+    { category: 'reselling', title: `${query} for Resellers`,      badgeText: 'Reselling & Social',      storeKeys: ['meesho','navo','glowroad','shop101'] },
+    { category: 'grocery',   title: `${query} (Quick Delivery)`,   badgeText: 'Grocery & Quick',         storeKeys: ['blinkit','zepto','instamart','bigbasket'] },
+    { category: 'commercial',title: `Commercial ${query}`,         badgeText: 'Commercial / Industrial', storeKeys: ['moglix','industrybuying','amazonbusiness'] },
+    { category: 'global',    title: `Export ${query}`,             badgeText: 'Global / Import',         storeKeys: ['alibaba'] }
   ];
 }
 
@@ -220,6 +383,7 @@ app.post('/api/search', async (req, res) => {
     }
     const cleanQuery = String(query).trim().toLowerCase().slice(0, 100);
 
+    // Cache check
     const cachedData = searchCache.get(cleanQuery);
     if (cachedData) {
       if (Date.now() - cachedData.timestamp < CACHE_EXPIRY_MS) {
@@ -228,6 +392,10 @@ app.post('/api/search', async (req, res) => {
       searchCache.delete(cleanQuery);
     }
 
+    // 🔴 Step 1: Get base price from keyword database (works ALWAYS)
+    const keywordRange = detectPriceRangeByKeyword(cleanQuery);
+
+    // 🔴 Step 2: Ask AI (if available) for products + prices
     let products = null;
     if (ai) {
       try {
@@ -247,109 +415,113 @@ app.post('/api/search', async (req, res) => {
       products = getFallbackResults(cleanQuery);
       usedFallback = true;
     } else {
+      // Fill missing categories from fallback
       const existingCats = products.map(p => p.category);
-      const fallbackData = getFallbackResults(cleanQuery);
-      
-      fallbackData.forEach(fbItem => {
-        if (!existingCats.includes(fbItem.category)) {
-          products.push(fbItem);
-        }
+      getFallbackResults(cleanQuery).forEach(fbItem => {
+        if (!existingCats.includes(fbItem.category)) products.push(fbItem);
       });
     }
+
+    // 🔴 Step 3: Build final products with SMART PRICING
+    const categoryStoresMap = {
+      retail:     ['meesho', 'flipkart', 'jiomart', 'shopclues', 'myntra', 'ajio', 'tatacliq', 'amazon'],
+      wholesale:  ['udaan', 'indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
+      reselling:  ['meesho', 'navo', 'glowroad', 'shop101'],
+      grocery:    ['blinkit', 'zepto', 'instamart', 'bigbasket'],
+      commercial: ['moglix', 'industrybuying', 'amazonbusiness'],
+      global:     ['alibaba']
+    };
 
     let finalProducts = products
       .filter(item => item && typeof item === 'object')
       .map(item => {
-        let stores = [];
-        
-        // सभी स्टोर्स जोड़ें
-        const categoryStoresMap = {
-          retail: ['meesho', 'flipkart', 'jiomart', 'shopclues', 'myntra', 'ajio', 'tatacliq', 'amazon'],
-          wholesale: ['udaan', 'indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
-          reselling: ['meesho', 'navo', 'glowroad', 'shop101'],
-          grocery: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
-          commercial: ['moglix', 'industrybuying', 'amazonbusiness'],
-          global: ['alibaba']
-        };
+        const category = item.category || 'retail';
 
-        const requiredStores = categoryStoresMap[item.category] || ['meesho', 'flipkart', 'amazon'];
+        // --- 1. AI से कीमत (min/max) ---
+        let aiMin = Number(item.minPrice) || 0;
+        let aiMax = Number(item.maxPrice) || 0;
+        if (aiMax < aiMin) [aiMin, aiMax] = [aiMax, aiMin];
 
-        // 🔴 AI की दी हुई रेंज का उपयोग करें (अगर AI ने नहीं दी, तो फॉलबैक का उपयोग करें)
-        let min = Number(item.minPrice) || 0;
-        let max = Number(item.maxPrice) || 0;
-
-        // अगर AI ने 0 या गलत कीमत दी है, तो हमारा स्मार्ट फॉलबैक इस्तेमाल करें
-        if (min <= 0 || max <= 0) {
-          const fallback = getFallbackPriceRange(item.category, item.title);
-          min = fallback.min;
-          max = fallback.max;
+        // --- 2. Keyword DB से range (priority: AI > keyword DB > category fallback) ---
+        let range;
+        if (aiMin > 0 && aiMax > 0) {
+          // AI ने दिया है, तो उसे use करें
+          range = { min: aiMin, max: aiMax };
+        } else if (keywordRange) {
+          // AI ने नहीं दिया, keyword DB से लें + category adjust करें
+          range = adjustRangeForCategory(keywordRange, category);
+        } else {
+          // कुछ भी नहीं मिला, तो category fallback
+          range = getFallbackPriceRange(category);
         }
 
-        // सुनिश्चित करें कि max, min से कम न हो
-        if (max < min) max = min * 2;
+        // safety: max >= min * 1.15 always
+        if (range.max <= range.min * 1.15) range.max = Math.round(range.min * 1.5);
 
-        let tempStores = [];
+        // --- 3. हर store के लिए price calculate करें ---
+        const requiredStores = categoryStoresMap[category] || categoryStoresMap.retail;
+        const tempStores = [];
 
-        requiredStores.forEach((key) => {
+        requiredStores.forEach((key, idx) => {
           const storeConfig = STORES[key];
-          if (storeConfig) {
-            // बेस प्राइस (min के आस-पास)
-            let basePrice = min + Math.floor(Math.random() * (max * 0.1)); 
-            
-            // स्टोर के हिसाब से कीमत बढ़ाएं (Smart Weightage)
-            const multiplier = getStorePriceMultiplier(key);
-            basePrice = Math.floor(basePrice * multiplier);
+          if (!storeConfig) return;
 
-            // रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक)
-            const increase = Math.floor(Math.random() * (basePrice * 0.5)) + Math.floor(basePrice * 0.1);
-            const highPrice = basePrice + increase;
+          const multiplier = getStorePriceMultiplier(key);
+          
+          // Store-level randomization (±8%) — same store हर बार अलग price दिखाए
+          const jitter = 0.92 + Math.random() * 0.16;
+          
+          let storeMin = range.min * multiplier * jitter;
+          let storeMax = range.max * multiplier * jitter;
+          
+          // सुनिश्चित करें storeMax > storeMin
+          if (storeMax <= storeMin) storeMax = storeMin * 1.3;
 
-            tempStores.push({
-              name: storeConfig.name,
-              price: `₹${basePrice} - ₹${highPrice}`, 
-              isLowest: false, 
-              key: key,
-              baseNum: basePrice, // कैलकुलेशन के लिए
-              link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
-            });
-          }
+          // Round nicely (₹1 के multiples)
+          storeMin = Math.max(1, Math.round(storeMin));
+          storeMax = Math.max(storeMin + 1, Math.round(storeMax));
+
+          tempStores.push({
+            name: storeConfig.name,
+            price: `${formatPrice(storeMin)} - ${formatPrice(storeMax)}`,
+            isLowest: false,
+            key: key,
+            baseNum: storeMin, // lowest detection के लिए
+            link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
+          });
         });
 
-        // अब सही "Lowest" (सस्ता) टैग लगाएं
-        let minPriceValue = Infinity;
-        let minPriceIndex = -1;
-        
-        tempStores.forEach((s, i) => {
-          if (s.baseNum < minPriceValue) {
-            minPriceValue = s.baseNum;
-            minPriceIndex = i;
-          }
-        });
-
-        if (minPriceIndex !== -1) {
-          tempStores[minPriceIndex].isLowest = true;
+        // --- 4. सबसे सस्ते store पर "Lowest" badge ---
+        if (tempStores.length > 0) {
+          let minIdx = 0;
+          let minVal = Infinity;
+          tempStores.forEach((s, i) => {
+            if (s.baseNum < minVal) { minVal = s.baseNum; minIdx = i; }
+          });
+          tempStores[minIdx].isLowest = true;
         }
 
-        // baseNum हटा दें
-        stores = tempStores.map(({ baseNum, ...rest }) => rest);
+        // baseNum remove
+        const stores = tempStores.map(({ baseNum, ...rest }) => rest);
 
         return {
-          category: item.category || 'retail',
+          category,
           title: item.title ? String(item.title) : cleanQuery,
-          image: '', 
+          image: '',
           badgeText: item.badgeText || 'Retail',
+          priceRange: `${formatPrice(range.min)} - ${formatPrice(range.max)}`,
           stores
         };
       })
       .filter(item => item.stores.length > 0);
 
+    // Placeholder images
     finalProducts = finalProducts.map(p => {
-      if (!p.image || p.image === '') {
-        p.image = placeholderImage(p.title);
-      }
+      if (!p.image) p.image = placeholderImage(p.title);
       return p;
     });
 
+    // Cache
     if (!usedFallback && finalProducts.length > 0) {
       searchCache.set(cleanQuery, { products: finalProducts, timestamp: Date.now() });
     }
@@ -362,7 +534,14 @@ app.post('/api/search', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', ai: !!ai, model: GEMINI_MODEL, cachedItems: searchCache.size, timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    ai: !!ai,
+    model: GEMINI_MODEL,
+    cachedItems: searchCache.size,
+    keywordDbSize: PRICE_DATABASE.reduce((s, e) => s + e.kw.length, 0),
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.get('*', (req, res) => {
@@ -372,4 +551,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🛒 Shopping Deals Server running on port ${PORT}`);
   console.log(`🤖 Gemini AI: ${ai ? '✅ Active (' + GEMINI_MODEL + ')' : '⚠️  Fallback mode'}`);
+  console.log(`📊 Keyword DB: ${PRICE_DATABASE.reduce((s, e) => s + e.kw.length, 0)} keywords loaded`);
 });
