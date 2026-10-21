@@ -90,7 +90,7 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन
+// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब ₹200 से शुरू)
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
@@ -98,21 +98,22 @@ function getCategoryBasePrice(category, title) {
   if (category === 'retail') {
     if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 25000; }
     else if (t.includes('laptop')) { min = 30000; max = 70000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans')) { min = 400; max = 2000; }
-    else { min = 500; max = 5000; }
+    // रिटेल में कपड़े ₹200 से ₹1500 (एकदम असली रेंज)
+    else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 200; max = 1500; }
+    else { min = 200; max = 3000; }
   } 
   else if (category === 'wholesale') {
     if (t.includes('mobile')) { min = 8000; max = 15000; }
-    else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 200; max = 800; }
-    else { min = 300; max = 2000; }
+    else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 600; }
+    else { min = 200; max = 1500; }
   } 
   else if (category === 'reselling') {
-    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 300; max = 700; }
-    else { min = 200; max = 1000; }
+    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 150; max = 500; }
+    else { min = 100; max = 800; }
   } 
   else if (category === 'grocery') {
-    if (t.includes('kurti') || t.includes('shirt')) { min = 400; max = 900; }
-    else { min = 50; max = 500; }
+    if (t.includes('kurti') || t.includes('shirt')) { min = 200; max = 700; } 
+    else { min = 50; max = 300; }
   } 
   else if (category === 'commercial') {
     if (t.includes('bulk') || t.includes('pack')) { min = 5000; max = 15000; }
@@ -124,7 +125,7 @@ function getCategoryBasePrice(category, title) {
     else { min = 500; max = 5000; }
   } 
   else {
-    min = 500; max = 3000;
+    min = 200; max = 3000;
   }
 
   return { min, max };
@@ -253,7 +254,7 @@ app.post('/api/search', async (req, res) => {
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
         let stores = [];
 
-        // कैटेगरी के हिसाब से प्राइस रेंज तय करें
+        // 🔴 यहाँ हम हर कैटेगरी के हिसाब से प्राइस रेंज तय करेंगे
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
         storeKeys.forEach((key, idx) => {
@@ -273,6 +274,7 @@ app.post('/api/search', async (req, res) => {
               isLowest: false, 
               key: key,
               link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
+              // altLink हटा दिया गया है (Google बटन नहीं दिखेगा)
             });
           }
         });
@@ -281,6 +283,7 @@ app.post('/api/search', async (req, res) => {
         let minPriceIndex = -1;
         let minPriceValue = Infinity;
         stores.forEach((s, i) => {
+          // "₹500 - ₹1200" जैसे स्ट्रिंग से सबसे छोटा नंबर (500) निकालें
           const match = String(s.price).match(/₹(\d+)/);
           if (match) {
             const num = parseInt(match[1], 10);
