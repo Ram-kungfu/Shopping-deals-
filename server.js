@@ -90,7 +90,7 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब ₹200 से शुरू)
+// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब मिनिमम ₹200-₹300)
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
@@ -98,21 +98,21 @@ function getCategoryBasePrice(category, title) {
   if (category === 'retail') {
     if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 25000; }
     else if (t.includes('laptop')) { min = 30000; max = 70000; }
-    // रिटेल में कपड़े ₹200 से ₹1500 (एकदम असली रेंज)
+    // रिटेल में कपड़े ₹200 से शुरू (मिनिमम 300 के अंदर)
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 200; max = 1500; }
     else { min = 200; max = 3000; }
   } 
   else if (category === 'wholesale') {
     if (t.includes('mobile')) { min = 8000; max = 15000; }
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('bulk') || t.includes('pack')) { min = 150; max = 600; }
-    else { min = 200; max = 1500; }
+    else { min = 150; max = 1500; }
   } 
   else if (category === 'reselling') {
-    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 150; max = 500; }
+    if (t.includes('kurti') || t.includes('shirt') || t.includes('top')) { min = 100; max = 500; }
     else { min = 100; max = 800; }
   } 
   else if (category === 'grocery') {
-    if (t.includes('kurti') || t.includes('shirt')) { min = 200; max = 700; } 
+    if (t.includes('kurti') || t.includes('shirt')) { min = 150; max = 700; } 
     else { min = 50; max = 300; }
   } 
   else if (category === 'commercial') {
@@ -257,20 +257,20 @@ app.post('/api/search', async (req, res) => {
         // 🔴 यहाँ हम हर कैटेगरी के हिसाब से प्राइस रेंज तय करेंगे
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
+        // 🔴 सुनिश्चित करें कि रेंज हमेशा कम से शुरू हो (₹200-₹300 के आस-पास)
+        // ताकि कम से कम एक स्टोर का बेस प्राइस ₹300 के अंदर ही हो
+        let basePrice = min + Math.floor(Math.random() * 100);
+
         storeKeys.forEach((key, idx) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
-            // हर स्टोर के लिए रेंज के अंदर एक रैंडम कीमत
-            const price1 = Math.floor(Math.random() * (max - min + 1)) + min;
-            const price2 = Math.floor(Math.random() * (max - min + 1)) + min;
-            
-            // कीमत को RANGE (जैसे ₹500 - ₹1200) के फॉर्मेट में दिखाएं
-            const low = Math.min(price1, price2);
-            const high = Math.max(price1, price2);
+            // हर स्टोर के लिए बेस प्राइस से थोड़ा ज्यादा रखें (मैक्सिमम 2 गुना तक)
+            const increase = Math.floor(Math.random() * basePrice) + 50;
+            const highPrice = basePrice + increase;
 
             stores.push({
               name: storeConfig.name,
-              price: `₹${low} - ₹${high}`, 
+              price: `₹${basePrice} - ₹${highPrice}`, 
               isLowest: false, 
               key: key,
               link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
