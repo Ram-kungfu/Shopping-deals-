@@ -90,7 +90,7 @@ function priceToNumber(price) {
   return Number.isNaN(n) ? Infinity : n;
 }
 
-// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन (अब एकदम सही)
+// 🔴 कैटेगरी के हिसाब से कीमत तय करने वाला फंक्शन
 function getCategoryBasePrice(category, title) {
   const t = String(title).toLowerCase();
   let min, max;
@@ -98,7 +98,6 @@ function getCategoryBasePrice(category, title) {
   if (category === 'retail') {
     if (t.includes('mobile') || t.includes('phone') || t.includes('5g')) { min = 10000; max = 25000; }
     else if (t.includes('laptop')) { min = 30000; max = 70000; }
-    // रिटेल में कपड़े ₹200 से ₹1500
     else if (t.includes('shirt') || t.includes('kurti') || t.includes('jeans') || t.includes('top')) { min = 200; max = 1500; }
     else { min = 200; max = 3000; }
   } 
@@ -252,13 +251,36 @@ app.post('/api/search', async (req, res) => {
       .filter(item => item && typeof item === 'object')
       .map(item => {
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
+        
+        // 🔴 स्मार्ट फिल्टर: हर कैटेगरी के सभी 8 स्टोर्स को अपने आप जोड़ दें
+        const categoryStoresMap = {
+          retail: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'],
+          wholesale: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
+          reselling: ['meesho', 'navo', 'glowroad', 'shop101'],
+          grocery: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
+          commercial: ['moglix', 'industrybuying', 'amazonbusiness'],
+          global: ['alibaba']
+        };
+
+        const requiredStores = categoryStoresMap[item.category] || [];
+        
+        // जो स्टोर्स AI ने दिए हैं, उन्हें जोड़ें
+        let finalStoreKeys = [...storeKeys];
+        
+        // जो मिसिंग हैं, उन्हें जोड़ें
+        requiredStores.forEach(reqKey => {
+          if (!finalStoreKeys.includes(reqKey)) {
+            finalStoreKeys.push(reqKey);
+          }
+        });
+
         let stores = [];
 
         // 🔴 कैटेगरी के हिसाब से प्राइस रेंज तय करें
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
         // 🔴 यहाँ हम हर स्टोर के लिए अलग-अलग बेस प्राइस तय करेंगे (₹200-₹300 के आस-पास)
-        storeKeys.forEach((key, idx) => {
+        finalStoreKeys.forEach((key, idx) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
             // हर स्टोर के लिए एक अलग रैंडम बेस प्राइस (min से शुरू होकर)
@@ -269,8 +291,8 @@ app.post('/api/search', async (req, res) => {
               basePrice = min + Math.floor(Math.random() * 50); 
             }
 
-            // अब रेंज बनाएं (बेस प्राइस से लेकर 2 गुना तक)
-            const increase = Math.floor(Math.random() * (basePrice * 0.8)) + 50;
+            // अब रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक, ताकि ज्यादा अंतर न दिखे)
+            const increase = Math.floor(Math.random() * (basePrice * 0.4)) + 30;
             const highPrice = basePrice + increase;
 
             stores.push({
