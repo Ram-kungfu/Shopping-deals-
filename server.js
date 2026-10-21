@@ -130,6 +130,24 @@ function getCategoryBasePrice(category, title) {
   return { min, max };
 }
 
+// 🔴 स्टोर के हिसाब से कीमत बढ़ाने का फंक्शन (Smart Store Weightage)
+function getStorePriceMultiplier(storeKey) {
+  const key = String(storeKey).toLowerCase();
+  if (key === 'meesho' || key === 'udaan' || key === 'glowroad' || key === 'shop101' || key === 'navo') {
+    return 1.0; // सबसे सस्ता (Meesho, Reselling sites)
+  }
+  if (key === 'flipkart' || key === 'jiomart' || key === 'shopclues') {
+    return 1.15; // थोड़ा महंगा
+  }
+  if (key === 'myntra' || key === 'ajio' || key === 'tatacliq') {
+    return 1.25; // और थोड़ा महंगा (Fashion sites)
+  }
+  if (key === 'amazon' || key === 'amazonbusiness') {
+    return 1.35; // सबसे महंगा (Brand value)
+  }
+  return 1.1; // बाकी स्टोर्स के लिए
+}
+
 // ==================== GEMINI ====================
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 let ai = null;
@@ -252,10 +270,10 @@ app.post('/api/search', async (req, res) => {
       .map(item => {
         let storeKeys = Array.isArray(item.storeKeys) ? item.storeKeys : [];
         
-        // 🔴 स्मार्ट फिल्टर: हर कैटेगरी के सभी 8 स्टोर्स को अपने आप जोड़ दें
+        // सभी स्टोर्स जोड़ें
         const categoryStoresMap = {
-          retail: ['amazon', 'flipkart', 'myntra', 'ajio', 'tatacliq', 'jiomart', 'meesho', 'shopclues'],
-          wholesale: ['indiamart', 'udaan', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
+          retail: ['meesho', 'flipkart', 'myntra', 'ajio', 'jiomart', 'shopclues', 'tatacliq', 'amazon'],
+          wholesale: ['udaan', 'indiamart', 'tradeindia', 'flipkartwholesale', 'jumbotail', 'ninjacart'],
           reselling: ['meesho', 'navo', 'glowroad', 'shop101'],
           grocery: ['blinkit', 'zepto', 'instamart', 'bigbasket'],
           commercial: ['moglix', 'industrybuying', 'amazonbusiness'],
@@ -264,10 +282,7 @@ app.post('/api/search', async (req, res) => {
 
         const requiredStores = categoryStoresMap[item.category] || [];
         
-        // जो स्टोर्स AI ने दिए हैं, उन्हें जोड़ें
         let finalStoreKeys = [...storeKeys];
-        
-        // जो मिसिंग हैं, उन्हें जोड़ें
         requiredStores.forEach(reqKey => {
           if (!finalStoreKeys.includes(reqKey)) {
             finalStoreKeys.push(reqKey);
@@ -276,52 +291,54 @@ app.post('/api/search', async (req, res) => {
 
         let stores = [];
 
-        // 🔴 कैटेगरी के हिसाब से प्राइस रेंज तय करें
+        // कैटेगरी के हिसाब से मिनिमम और मैक्सिमम प्राइस तय करें
         const { min, max } = getCategoryBasePrice(item.category, item.title);
 
-        // 🔴 यहाँ हम हर स्टोर के लिए अलग-अलग बेस प्राइस तय करेंगे (₹200-₹300 के आस-पास)
-        finalStoreKeys.forEach((key, idx) => {
+        // पहले सभी स्टोर्स के लिए रेट कैलकुलेट करें
+        let tempStores = [];
+
+        finalStoreKeys.forEach((key) => {
           const storeConfig = STORES[key];
           if (storeConfig) {
-            // हर स्टोर के लिए एक अलग रैंडम बेस प्राइस (min से शुरू होकर)
-            let basePrice = min + Math.floor(Math.random() * 150); // 0 से 150 का रैंडम अंतर
+            // बेस प्राइस (₹200-₹300 के आस-पास)
+            let basePrice = min + Math.floor(Math.random() * 50); 
             
-            // अगर यह सबसे पहला स्टोर है, तो उसे हमेशा सबसे कम रेट दें (जैसे ₹200)
-            if (idx === 0) {
-              basePrice = min + Math.floor(Math.random() * 50); 
-            }
+            // स्टोर के हिसाब से कीमत बढ़ाएं (Smart Weightage)
+            const multiplier = getStorePriceMultiplier(key);
+            basePrice = Math.floor(basePrice * multiplier);
 
-            // अब रेंज बनाएं (बेस प्राइस से लेकर 1.5 गुना तक, ताकि ज्यादा अंतर न दिखे)
-            const increase = Math.floor(Math.random() * (basePrice * 0.4)) + 30;
+            // रेंज बनाएं (बेस प्राइस से लेकर 1.3 गुना तक)
+            const increase = Math.floor(Math.random() * (basePrice * 0.3)) + 20;
             const highPrice = basePrice + increase;
 
-            stores.push({
+            tempStores.push({
               name: storeConfig.name,
               price: `₹${basePrice} - ₹${highPrice}`, 
               isLowest: false, 
               key: key,
+              baseNum: basePrice, // कैलकुलेशन के लिए
               link: buildAffiliateLink(key, cleanQuery, storeConfig.name)
             });
           }
         });
 
-        // सही "Lowest" (सस्ता) टैग लगाएं (सबसे कम रेंज वाले पर)
-        let minPriceIndex = -1;
+        // अब सही "Lowest" (सस्ता) टैग लगाएं
         let minPriceValue = Infinity;
-        stores.forEach((s, i) => {
-          const match = String(s.price).match(/₹(\d+)/);
-          if (match) {
-            const num = parseInt(match[1], 10);
-            if (num < minPriceValue) {
-              minPriceValue = num;
-              minPriceIndex = i;
-            }
+        let minPriceIndex = -1;
+        
+        tempStores.forEach((s, i) => {
+          if (s.baseNum < minPriceValue) {
+            minPriceValue = s.baseNum;
+            minPriceIndex = i;
           }
         });
 
         if (minPriceIndex !== -1) {
-          stores.forEach((s, i) => { s.isLowest = (i === minPriceIndex); });
+          tempStores[minPriceIndex].isLowest = true;
         }
+
+        // baseNum हटा दें ताकि फ्रंटएंड पर न जाए
+        stores = tempStores.map(({ baseNum, ...rest }) => rest);
 
         return {
           category: item.category || 'retail',
