@@ -346,10 +346,11 @@ app.post('/api/search', async (req, res) => {
       })
       .filter(item => item.stores.length > 0);
 
-    // 🔴 स्मार्ट प्राइस एडजस्टर (Serper हटा दिया गया है, सिर्फ AI की कीमतों पर भरोसा)
+    // 🔴 स्मार्ट प्राइस एडजस्टर (Smart Price Balancer)
     finalProducts = finalProducts.map(p => {
       if (p.stores.length > 0) {
         let minPrice = Infinity;
+        // पहले सबसे कम कीमत ढूंढें
         p.stores.forEach(s => {
           if (s.price && s.price !== '—' && s.price !== '') {
             const num = priceToNumber(s.price);
@@ -359,19 +360,22 @@ app.post('/api/search', async (req, res) => {
 
         if (minPrice !== Infinity) {
           p.stores.forEach(s => {
+            // अगर AI ने कीमत दी है
             if (s.price && s.price !== '—' && s.price !== '') {
               const num = priceToNumber(s.price);
-              // अगर कीमत 40% से ज्यादा है, तो कम करें
-              if (num > minPrice * 1.4) {
-                const newPrice = Math.round(minPrice * (1 + (Math.random() * 0.15 + 0.05))); 
+              // 🔴 अगर कीमत सबसे सस्ते से 20% (1.2x) से ज्यादा है, तो उसे कम करें
+              if (num > minPrice * 1.2) {
+                const newPrice = Math.round(minPrice * (1 + (Math.random() * 0.1 + 0.05))); // 5% से 15% तक ज्यादा
                 s.price = '₹' + newPrice;
               }
             } else {
-              s.price = '₹' + Math.round(minPrice * (1 + (Math.random() * 0.3 + 0.1)));
+              // जिन स्टोर्स में कीमत नहीं है, उन्हें सबसे सस्ते से 10-20% ज्यादा दें
+              s.price = '₹' + Math.round(minPrice * (1 + (Math.random() * 0.2 + 0.1)));
             }
           });
         }
 
+        // अब सही "Lowest" (सस्ता) टैग लगाएं
         let minPriceIndex = -1;
         let minPriceValue = Infinity;
         p.stores.forEach((s, i) => {
