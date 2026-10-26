@@ -249,8 +249,8 @@
 <script>
 
   // ==================== EarnKaro Base Link with User ID (3372043) ====================
-  const EARNKARO_BASE_URL = "https://earnkaro.com/sharedeal?url="; 
-  const EARNKARO_UID = "3372043"; // आपकी अपनी ऑफिशियल यूजर आईडी[span_0](start_span)[span_0](end_span)
+  const EARNKARO_BASE_URL = "https://earnkaro.com/deal?url="; 
+  const EARNKARO_UID = "3372043";
 
   // ==================== भाषा (Language) सेटिंग ====================
   const translations = {
@@ -468,19 +468,16 @@
         let rawStoreLink = store.link || '#';
         let finalStoreLink = rawStoreLink;
 
-        // यहाँ चेक कर रहे हैं कि अगर स्टोर का नाम 'Meesho' या 'मीशो' है, तो ही उसे EarnKaro में बदलें
+        // 🔴 यहाँ लॉजिक सुधारा गया है ताकि सीधे प्रोडक्ट/सर्च पेज खुले और EarnKaro होमपेज न आए
         let storeNameLower = (store.name || '').toLowerCase();
         if (storeNameLower.includes('meesho') || storeNameLower.includes('मीशो')) {
-            // हम जाँच कर रहे हैं कि क्या AI ने कोई असली और वैध (valid) लिंक दिया है या नहीं
             if (rawStoreLink && rawStoreLink !== '#' && rawStoreLink.startsWith('http') && !rawStoreLink.includes('earnkaro')) {
-                finalStoreLink = EARNKARO_BASE_URL + encodeURIComponent(rawStoreLink) + '&uid=' + EARNKARO_UID;
+                // EarnKaro का सही फॉर्मेट: https://earnkaro.com/deal?url=encoded_link&uid=your_id
+                finalStoreLink = `https://earnkaro.com/deal?url=${encodeURIComponent(rawStoreLink)}&uid=${EARNKARO_UID}`;
             } else {
-                // अगर असली प्रोडक्ट लिंक नहीं है, तो सीधे मीशो की मुख्य वेबसाइट खुलेगी (अर्नकरो का होमपेज कभी नहीं खुलेगा)
                 finalStoreLink = "https://www.meesho.com";
             }
         }
-     
-         
 
         storesHtml += `
           <tr>
