@@ -469,12 +469,17 @@
         let finalStoreLink = rawStoreLink;
 
         // यहाँ चेक कर रहे हैं कि अगर स्टोर का नाम 'Meesho' या 'मीशो' है, तो ही उसे EarnKaro में बदलें
-        let storeNameLower = (store.name || '').toLowerCase();
+                let storeNameLower = (store.name || '').toLowerCase();
         if (storeNameLower.includes('meesho') || storeNameLower.includes('मीशो')) {
-            if (rawStoreLink !== '#') {
-                finalStoreLink = EARNKARO_BASE_URL + encodeURIComponent(rawStoreLink);
+            if (rawStoreLink && rawStoreLink !== '#' && rawStoreLink.startsWith('http')) {
+                // यह आपके EarnKaro बेस लिंक और आपकी UID (3372043) के साथ सीधे प्रोडक्ट पेज पर भेजेगा[span_1](start_span)[span_1](end_span)
+                finalStoreLink = EARNKARO_BASE_URL + encodeURIComponent(rawStoreLink) + '&uid=' + EARNKARO_UID;
+            } else {
+                // अगर कोई असली लिंक न मिले, तो सीधे मीशो की ऑफिशियल वेबसाइट खुलेगी, अर्नकरो का होमपेज नहीं
+                finalStoreLink = "https://www.meesho.com";
             }
         }
+
 
         storesHtml += `
           <tr>
