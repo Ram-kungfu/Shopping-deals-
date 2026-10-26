@@ -247,6 +247,8 @@
 </footer>
 
 <script>
+ const EARNKARO_BASE_URL = "https://earnkaro.com/sharedeal?url="; // आपका EarnKaro बेस लिंक
+
   // ==================== भाषा (Language) सेटिंग ====================
   const translations = {
     hi: {
@@ -455,20 +457,32 @@
                    : '';
 
       let storesHtml = '';
-      (item.stores || []).forEach(store => {
+            (item.stores || []).forEach(store => {
         const priceClass = store.isLowest ? 'price lowest-price' : 'price';
         const cheapestText = currentLang === 'hi' ? ' (सस्ता)' : ' (Lowest)';
         const priceText = store.isLowest ? `${store.price}${cheapestText}` : store.price;
+
+        let rawStoreLink = store.link || '#';
+        let finalStoreLink = rawStoreLink;
+
+        // यहाँ चेक कर रहे हैं कि अगर स्टोर का नाम 'Meesho' या 'मीशो' है, तो ही उसे EarnKaro में बदलें
+        let storeNameLower = (store.name || '').toLowerCase();
+        if (storeNameLower.includes('meesho') || storeNameLower.includes('मीशो')) {
+            if (rawStoreLink !== '#') {
+                finalStoreLink = EARNKARO_BASE_URL + encodeURIComponent(rawStoreLink);
+            }
+        }
 
         storesHtml += `
           <tr>
             <td>${escapeHtml(store.name)}</td>
             <td class="${priceClass}">${escapeHtml(priceText)}</td>
             <td>
-              <a href="${escapeHtml(safeLink(store.link))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg} width:100%; text-align:center; display:block;">${t.buyBtn}</a>
+              <a href="${escapeHtml(safeLink(finalStoreLink))}" target="_blank" rel="noopener noreferrer sponsored" class="visit-btn" style="${btnBg} width:100%; text-align:center; display:block;">${t.buyBtn}</a>
             </td>
           </tr>`;
       });
+
 
       const title = String(item.title || '');
       html += `
