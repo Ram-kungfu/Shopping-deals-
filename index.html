@@ -468,13 +468,11 @@
         let rawStoreLink = store.link || '#';
         let finalStoreLink = rawStoreLink;
 
-        // 🔴 यहाँ लॉजिक सुधारा गया है ताकि सीधे प्रोडक्ट/सर्च पेज खुले और EarnKaro होमपेज न आए
+        // 🔧 बदलाव: Meesho अब EarnKaro पेज से नहीं गुज़रेगा। सर्वर का बनाया सीधा Meesho सर्च लिंक खुलेगा।
+        // लिंक न मिले तभी Meesho का होमपेज खुलेगा।
         let storeNameLower = (store.name || '').toLowerCase();
         if (storeNameLower.includes('meesho') || storeNameLower.includes('मीशो')) {
-            if (rawStoreLink && rawStoreLink !== '#' && rawStoreLink.startsWith('http') && !rawStoreLink.includes('earnkaro')) {
-                // EarnKaro का सही फॉर्मेट: https://earnkaro.com/deal?url=encoded_link&uid=your_id
-                finalStoreLink = `https://earnkaro.com/deal?url=${encodeURIComponent(rawStoreLink)}&uid=${EARNKARO_UID}`;
-            } else {
+            if (!(rawStoreLink && rawStoreLink !== '#' && rawStoreLink.startsWith('http'))) {
                 finalStoreLink = "https://www.meesho.com";
             }
         }
@@ -561,4 +559,4 @@
 </script>
 
 </body>
-</html>
+ </html>
