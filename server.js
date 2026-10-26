@@ -16,63 +16,96 @@ app.use(express.static(path.join(__dirname, 'public')));
 const searchCache = new Map();
 const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
-// ==================== STORE LINK CONFIG ====================
+// ==================== CUELINKS CONFIG ====================
+const CUELINKS_ID = '330736';
+const CUELINKS_SOURCE = 'linkkit';
+
+// 🔴 सभी स्टोर्स के लिए Cuelinks वाले लिंक
 const STORES = {
-  amazon:   { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', name: 'Amazon' },
-  flipkart: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid', name: 'Flipkart' },
-  meesho:   { type: 'q', base: 'https://www.meesho.com/search?q=', env: 'MEESHO_AFF_ID', param: 'utm_source', name: 'Meesho' },
-  myntra:   { type: 'path', base: 'https://www.myntra.com/', hyphen: true, env: 'MYNTRA_AFF_ID', param: 'utm_source', name: 'Myntra' },
-  ajio:     { type: 'q', base: 'https://www.ajio.com/search/?text=', env: 'AJIO_AFF_ID', param: 'utm_source', name: 'Ajio' },
-  tatacliq: { type: 'q', base: 'https://www.tatacliq.com/search/?searchCategory=all&text=', env: 'TATACLIQ_AFF_ID', param: 'utm_source', name: 'TataCLiQ' },
-  jiomart:  { type: 'path', base: 'https://www.jiomart.com/search/', env: 'JIOMART_AFF_ID', param: 'utm_source', name: 'JioMart' },
-  shopclues:{ type: 'google', label: 'ShopClues', name: 'ShopClues' },
-  blinkit:  { type: 'q', base: 'https://blinkit.com/s/?q=', env: 'BLINKIT_AFF_ID', param: 'utm_source', name: 'Blinkit' },
-  zepto:    { type: 'q', base: 'https://www.zeptonow.com/search?query=', env: 'ZEPTO_AFF_ID', param: 'utm_source', name: 'Zepto' },
-  instamart:{ type: 'q', base: 'https://www.swiggy.com/instamart/search?custom_back=true&query=', env: 'INSTAMART_AFF_ID', param: 'utm_source', name: 'Instamart' },
-  bigbasket:{ type: 'q', base: 'https://www.bigbasket.com/ps/?q=', env: 'BIGBASKET_AFF_ID', param: 'utm_source', name: 'BigBasket' },
-  indiamart:{ type: 'q', base: 'https://dir.indiamart.com/search.mp?ss=', env: 'INDIAMART_AFF_ID', param: 'utm_source', name: 'IndiaMART' },
-  udaan:    { type: 'q', base: 'https://www.udaan.com/search?q=', env: 'UDAAN_AFF_ID', param: 'utm_source', name: 'Udaan' },
-  tradeindia:{ type: 'q', base: 'https://www.tradeindia.com/search.html?keyword=', env: 'TRADEINDIA_AFF_ID', param: 'utm_source', name: 'TradeIndia' },
-  flipkartwholesale: { type: 'q', base: 'https://www.flipkart.com/search?q=', env: 'FLIPKART_AFF_ID', param: 'affid', name: 'Flipkart Wholesale' },
-  jumbotail:{ type: 'q', base: 'https://jumbotail.com/search?q=', env: 'JUMBOTAIL_AFF_ID', param: 'utm_source', name: 'Jumbotail' },
-  ninjacart:{ type: 'q', base: 'https://ninjacart.in/search?q=', env: 'NINJACART_AFF_ID', param: 'utm_source', name: 'NinjaCart' },
-  amazonbusiness: { type: 'q', base: 'https://www.amazon.in/s?k=', env: 'AMAZON_AFF_ID', param: 'tag', name: 'Amazon Business' },
-  moglix:   { type: 'q', base: 'https://www.moglix.com/search?q=', env: 'MOGLIX_AFF_ID', param: 'utm_source', name: 'Moglix' },
-  industrybuying: { type: 'q', base: 'https://www.industrybuying.com/search/?q=', env: 'INDUSTRYBUYING_AFF_ID', param: 'utm_source', name: 'IndustryBuying' },
-  alibaba:  { type: 'q', base: 'https://www.alibaba.com/trade/search?SearchText=', env: 'ALIBABA_AFF_ID', param: 'aff_id', name: 'Alibaba' },
-  glowroad: { type: 'google', label: 'GlowRoad', name: 'GlowRoad' },
-  shop101:  { type: 'google', label: 'Shop101', name: 'Shop101' },
-  navo:     { type: 'q', base: 'https://navo.app/search?q=', env: 'NAVO_AFF_ID', param: 'utm_source', name: 'Navo' }
+  // जहाँ आपके पास स्पेसिफिक लिंक हैं
+  shopsy:   { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.shopsy.in%2F`, name: 'Shopsy' },
+  shopclues:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.shopclues.com%2F`, name: 'ShopClues' },
+  tatacliq: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.tatacliq.com%2F`, name: 'TataCLiQ' },
+  moglix:   { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.moglix.com%2F`, name: 'Moglix' },
+  alibaba:  { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Foffer.alibaba.com%2F`, name: 'Alibaba' },
+
+  // जहाँ स्पेसिफिक लिंक नहीं हैं, वहाँ स्टैंडर्ड Cuelinks रीडायरेक्ट
+  amazon:   { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.amazon.in%2F`, name: 'Amazon' },
+  flipkart: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.flipkart.com%2F`, name: 'Flipkart' },
+  meesho:   { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.meesho.com%2F`, name: 'Meesho' },
+  myntra:   { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.myntra.com%2F`, name: 'Myntra' },
+  ajio:     { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.ajio.com%2F`, name: 'Ajio' },
+  jiomart:  { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.jiomart.com%2F`, name: 'JioMart' },
+  blinkit:  { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fblinkit.com%2F`, name: 'Blinkit' },
+  zepto:    { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.zeptonow.com%2F`, name: 'Zepto' },
+  instamart:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.swiggy.com%2Finstamart`, name: 'Instamart' },
+  bigbasket:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.bigbasket.com%2F`, name: 'BigBasket' },
+  indiamart:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fdir.indiamart.com%2F`, name: 'IndiaMART' },
+  udaan:    { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.udaan.com%2F`, name: 'Udaan' },
+  tradeindia:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.tradeindia.com%2F`, name: 'TradeIndia' },
+  flipkartwholesale: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.flipkart.com%2F`, name: 'Flipkart Wholesale' },
+  jumbotail:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fjumbotail.com%2F`, name: 'Jumbotail' },
+  ninjacart:{ type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fninjacart.in%2F`, name: 'NinjaCart' },
+  amazonbusiness: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.amazon.in%2F`, name: 'Amazon Business' },
+  industrybuying: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.industrybuying.com%2F`, name: 'IndustryBuying' },
+  glowroad: { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.glowroad.com%2F`, name: 'GlowRoad' },
+  shop101:  { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fwww.shop101.com%2F`, name: 'Shop101' },
+  navo:     { type: 'q', base: `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=https%3A%2F%2Fnavo.app%2F`, name: 'Navo' }
 };
 
 // ==================== HELPERS ====================
-function googleLink(query, label) {
-  return `https://www.google.com/search?q=${encodeURIComponent((query + ' ' + (label || '') + ' buy online').trim())}`;
-}
-
-function withAffiliate(url, store) {
-  const id = store.env ? process.env[store.env] : '';
-  if (!id || /^YOUR_/i.test(id)) return url;
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}${store.param}=${encodeURIComponent(id)}`;
-}
-
+// 🔴 यह फंक्शन लिंक के अंदर सर्च कीवर्ड जोड़ेगा
 function buildAffiliateLink(storeKey, query, storeName) {
   const key = String(storeKey || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const store = STORES[key];
-  if (!store) return googleLink(query, storeName);
-  if (store.type === 'google') return googleLink(query, store.label);
-
-  let url;
-  if (store.type === 'path') {
-    const slug = store.hyphen
-      ? encodeURIComponent(query.trim().replace(/\s+/g, '-'))
-      : encodeURIComponent(query.trim());
-    url = store.base + slug;
-  } else {
-    url = store.base + encodeURIComponent(query.trim());
+  
+  // अगर स्टोर नहीं मिला, तो गूगल पर भेजें
+  if (!store) {
+    return `https://www.google.com/search?q=${encodeURIComponent(query + ' ' + (storeName || '') + ' buy online')}`;
   }
-  return withAffiliate(url, store);
+
+  let searchPath = '';
+  
+  // हर स्टोर के लिए सर्च का तरीका अलग होता है
+  if (key === 'amazon' || key === 'amazonbusiness') searchPath = `s?k=${encodeURIComponent(query)}`;
+  else if (key === 'flipkart' || key === 'flipkartwholesale') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'meesho') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'myntra') searchPath = `${encodeURIComponent(query.replace(/\s+/g, '-'))}`;
+  else if (key === 'ajio') searchPath = `search/?text=${encodeURIComponent(query)}`;
+  else if (key === 'tatacliq') searchPath = `search/?searchCategory=all&text=${encodeURIComponent(query)}`;
+  else if (key === 'jiomart') searchPath = `search/${encodeURIComponent(query)}`;
+  else if (key === 'shopclues') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'blinkit') searchPath = `s/?q=${encodeURIComponent(query)}`;
+  else if (key === 'zepto') searchPath = `search?query=${encodeURIComponent(query)}`;
+  else if (key === 'instamart') searchPath = `search?custom_back=true&query=${encodeURIComponent(query)}`;
+  else if (key === 'bigbasket') searchPath = `ps/?q=${encodeURIComponent(query)}`;
+  else if (key === 'indiamart') searchPath = `search.mp?ss=${encodeURIComponent(query)}`;
+  else if (key === 'udaan') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'tradeindia') searchPath = `search.html?keyword=${encodeURIComponent(query)}`;
+  else if (key === 'jumbotail') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'ninjacart') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'moglix') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else if (key === 'industrybuying') searchPath = `search/?q=${encodeURIComponent(query)}`;
+  else if (key === 'alibaba') searchPath = `trade/search?SearchText=${encodeURIComponent(query)}`;
+  else if (key === 'shopsy') searchPath = `search?q=${encodeURIComponent(query)}`;
+  else searchPath = `search?q=${encodeURIComponent(query)}`;
+
+  // store.base में जो url= है, उसे निकालें
+  let baseWebsite = '';
+  const urlMatch = store.base.match(/url=([^&]+)/);
+  if (urlMatch && urlMatch[1]) {
+    baseWebsite = decodeURIComponent(urlMatch[1]);
+  } else {
+    baseWebsite = store.base;
+  }
+
+  if (!baseWebsite.endsWith('/')) baseWebsite += '/';
+
+  // पूरा सर्च URL बनाएं
+  const fullSearchUrl = baseWebsite + searchPath;
+
+  // 🔴 अब इसे फिर से Cuelinks में डालें
+  return `https://linksredirect.com/?cid=${CUELINKS_ID}&source=${CUELINKS_SOURCE}&url=${encodeURIComponent(fullSearchUrl)}`;
 }
 
 function placeholderImage(text) {
@@ -83,6 +116,11 @@ function placeholderImage(text) {
     `<text x="125" y="130" font-family="Arial, sans-serif" font-size="18" fill="#475569" text-anchor="middle">${label}</text>` +
     `</svg>`;
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function priceToNumber(price) {
+  const n = parseInt(String(price).replace(/[^\d]/g, ''), 10);
+  return Number.isNaN(n) ? Infinity : n;
 }
 
 // ==================== SMART AUTO-PRICE DATABASE ====================
